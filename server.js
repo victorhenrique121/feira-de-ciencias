@@ -11,7 +11,7 @@ const PUBLIC_DIR = path.join(__dirname, 'energia_solar_site');
 const OLD_DATA_FILE = path.join(__dirname, 'server', 'data', 'quiz-results.json');
 
 app.use(express.json({ limit: '50kb' }));
-app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
+app.use(express.static(PUBLIC_DIR, { extensions: ['html'], index: false }));
 
 function positiveInt(value) {
   const n = Number(value);
@@ -100,12 +100,7 @@ app.post('/api/quiz-results', (req, res) => {
       if (nome.length < 2) return res.status(400).json({ erro: 'Usuário não identificado.' });
       userId = createOrUpdateUser(nome, email).id;
     }
-    const result = saveQuizAttempt({
-      userId,
-      score: Number(req.body?.score),
-      total: Number(req.body?.total),
-      timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null
-    });
+    const result = saveQuizAttempt({ userId, score: Number(req.body?.score), total: Number(req.body?.total), timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null });
     res.status(201).json({ ok: true, id: result.id, userId, score: result.score, total: result.total, percentual: result.percentage, acertos: result.correctAnswers, erros: result.wrongAnswers, tempoSegundos: result.timeSeconds, rewardUnlocked: result.rewardUnlocked, reward: result.reward });
   } catch (error) {
     console.error(error);
@@ -121,7 +116,7 @@ app.get('/login', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'login.html'
 app.get('/perfil', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'perfil.html')));
 app.get('/ebook', (_req, res) => res.redirect('/ebook/energia-sustentavel.html'));
 
-/* Injeta a integração de conta antes do app principal. */
+/* A página inicial recebe account.js antes do HTML ser enviado. */
 app.get('/', async (_req, res) => {
   try {
     let html = await fs.readFile(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
