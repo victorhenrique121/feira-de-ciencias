@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f2f26">
+  <meta name="description" content="Acesso à experiência de Energia Solar da Feira de Ciências.">
+  <title>Entrar — Energia Solar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <main class="login-page">
+    <section class="login-visual" aria-hidden="true">
+      <div class="sun"></div>
+      <div class="visual-content">
+        <span class="eyebrow">FEIRA DE CIÊNCIAS</span>
+        <h1>Energia solar.<br><em>Na prática.</em></h1>
+        <p>Explore ciência, sustentabilidade e matemática em uma experiência interativa.</p>
+      </div>
+      <div class="visual-footer"><span>ENERGIA<b>.</b>SOLAR</span><span>2026</span></div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-box">
+        <div class="brand-mark">☀</div>
+        <span class="mobile-eyebrow">FEIRA DE CIÊNCIAS</span>
+        <h2>Bem-vindo.</h2>
+        <p class="subtitle">Antes de começar, conte como podemos chamar você.</p>
+
+        <form id="loginForm" novalidate>
+          <label for="nome">Seu nome <span>*</span></label>
+          <div class="input-wrap">
+            <input id="nome" name="nome" type="text" autocomplete="name" maxlength="60" placeholder="Digite seu nome" required autofocus>
+          </div>
+
+          <label for="email">E-mail <small>opcional</small></label>
+          <div class="input-wrap">
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120" placeholder="voce@email.com">
+          </div>
+
+          <p id="error" class="error" role="alert" aria-live="polite"></p>
+          <button class="submit" type="submit">
+            <span>Entrar na experiência</span>
+            <span class="arrow">→</span>
+          </button>
+        </form>
+
+        <p class="privacy">Seu nome é usado para identificar sua participação. O e-mail é opcional.</p>
+      </div>
+    </section>
+  </main>
+  <script src="login.js"></script>
+</body>
+</html>
