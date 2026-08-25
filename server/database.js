@@ -36,6 +36,7 @@ db.exec(`
     wrong_answers INTEGER NOT NULL,
     percentage REAL NOT NULL,
     time_seconds INTEGER,
+    would_invest TEXT CHECK (would_invest IN ('sim', 'nao', 'talvez')),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE RESTRICT
@@ -64,6 +65,12 @@ db.exec(`
     FOREIGN KEY (reward_id) REFERENCES rewards(id) ON DELETE CASCADE
   );
 `);
+
+// Migra bancos criados pela versão anterior, adicionando a coluna sem apagar dados.
+const columns = db.prepare(`PRAGMA table_info(quiz_attempts)`).all();
+if (!columns.some((column) => column.name === 'would_invest')) {
+  db.exec(`ALTER TABLE quiz_attempts ADD COLUMN would_invest TEXT CHECK (would_invest IN ('sim', 'nao', 'talvez'))`);
+}
 
 db.prepare(`
   INSERT OR IGNORE INTO activities (slug, name, type)
@@ -119,7 +126,7 @@ function unlockEbook(userId) {
   return reward;
 }
 
-function saveQuizAttempt({ userId, score, total, timeSeconds }) {
+function saveQuizAttempt({ userId, score, total, timeSeconds, wouldInvest }) {
   const user = findUserById(userId);
   if (!user) throw new Error('Usuário não encontrado.');
 
@@ -129,6 +136,8 @@ function saveQuizAttempt({ userId, score, total, timeSeconds }) {
     throw new Error('Pontuação inválida.');
   }
 
+  const allowedInvestments = new Set(['sim', 'nao', 'talvez']);
+  const safeWouldInvest = allowedInvestments.has(wouldInvest) ? wouldInvest : null;
   const correctAnswers = safeScore;
   const wrongAnswers = safeTotal - safeScore;
   const percentage = Number(((safeScore / safeTotal) * 100).toFixed(2));
@@ -138,9 +147,9 @@ function saveQuizAttempt({ userId, score, total, timeSeconds }) {
   const result = db.prepare(`
     INSERT INTO quiz_attempts (
       user_id, activity_id, score, total, correct_answers,
-      wrong_answers, percentage, time_seconds
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(userId, activity.id, safeScore, safeTotal, correctAnswers, wrongAnswers, percentage, safeTime);
+      wrong_answers, percentage, time_seconds, would_invest
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(userId, activity.id, safeScore, safeTotal, correctAnswers, wrongAnswers, percentage, safeTime, safeWouldInvest);
 
   const reward = percentage >= 70 ? unlockEbook(userId) : null;
 
@@ -152,6 +161,7 @@ function saveQuizAttempt({ userId, score, total, timeSeconds }) {
     wrongAnswers,
     percentage,
     timeSeconds: safeTime,
+    wouldInvest: safeWouldInvest,
     rewardUnlocked: Boolean(reward),
     reward
   };
