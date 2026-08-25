@@ -128,9 +128,7 @@ function saveQuizRequest(req, res) {
   }
 }
 
-/* Compatibilidade com o front-end existente. Respostas detalhadas continuam sendo ignoradas. */
 app.post('/api/quiz-results', saveQuizRequest);
-/* Novo endpoint semântico para tentativas do quiz. */
 app.post('/api/quiz-attempts', saveQuizRequest);
 
 app.get('/api/activities', (_req, res) => {
@@ -145,6 +143,7 @@ app.get('/', async (_req, res) => {
   try {
     let html = await fs.readFile(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
     if (!html.includes('account.js')) html = html.replace('</body>', '<script src="account.js"></script></body>');
+    if (!html.includes('quiz-ui.js')) html = html.replace('</body>', '<script src="quiz-ui.js"></script></body>');
     res.type('html').send(html);
   } catch (error) {
     res.status(500).send('Não foi possível carregar a aplicação.');
