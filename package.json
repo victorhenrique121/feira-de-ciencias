@@ -1,0 +1,9 @@
+{
+  "name": "energia-solar-feira-ciencias",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site educativo de energia solar, sustentabilidade e matemática financeira com API simples para resultados do quiz.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^5.1.0" }
+}
