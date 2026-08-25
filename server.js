@@ -79,7 +79,7 @@ app.get('/api/users/:id', (req, res) => {
 app.get('/api/users/:id/history', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
-  const history = db.prepare(`SELECT qa.id, a.slug AS activity_slug, a.name AS activity, qa.score, qa.total, qa.correct_answers, qa.wrong_answers, qa.percentage, qa.time_seconds, qa.created_at FROM quiz_attempts qa INNER JOIN activities a ON a.id = qa.activity_id WHERE qa.user_id = ? ORDER BY datetime(qa.created_at) DESC, qa.id DESC`).all(userId);
+  const history = db.prepare(`SELECT qa.id, a.slug AS activity_slug, a.name AS activity, qa.score, qa.total, qa.correct_answers, qa.wrong_answers, qa.percentage, qa.time_seconds, qa.would_invest, qa.created_at FROM quiz_attempts qa INNER JOIN activities a ON a.id = qa.activity_id WHERE qa.user_id = ? ORDER BY datetime(qa.created_at) DESC, qa.id DESC`).all(userId);
   res.json(history);
 });
 
@@ -90,8 +90,7 @@ app.get('/api/users/:id/rewards', (req, res) => {
   res.json(rewards);
 });
 
-/* O front-end antigo ainda pode enviar "respostas"; elas são ignoradas e não são armazenadas. */
-app.post('/api/quiz-results', (req, res) => {
+function saveQuizRequest(req, res) {
   try {
     let userId = positiveInt(req.body?.userId);
     const nome = String(req.body?.nome || '').trim();
@@ -100,13 +99,39 @@ app.post('/api/quiz-results', (req, res) => {
       if (nome.length < 2) return res.status(400).json({ erro: 'Usuário não identificado.' });
       userId = createOrUpdateUser(nome, email).id;
     }
-    const result = saveQuizAttempt({ userId, score: Number(req.body?.score), total: Number(req.body?.total), timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null });
-    res.status(201).json({ ok: true, id: result.id, userId, score: result.score, total: result.total, percentual: result.percentage, acertos: result.correctAnswers, erros: result.wrongAnswers, tempoSegundos: result.timeSeconds, rewardUnlocked: result.rewardUnlocked, reward: result.reward });
+
+    const result = saveQuizAttempt({
+      userId,
+      score: Number(req.body?.score),
+      total: Number(req.body?.total),
+      timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null,
+      wouldInvest: String(req.body?.would_invest || '').trim().toLowerCase()
+    });
+
+    res.status(201).json({
+      ok: true,
+      id: result.id,
+      userId,
+      score: result.score,
+      total: result.total,
+      percentual: result.percentage,
+      acertos: result.correctAnswers,
+      erros: result.wrongAnswers,
+      tempoSegundos: result.timeSeconds,
+      would_invest: result.wouldInvest,
+      rewardUnlocked: result.rewardUnlocked,
+      reward: result.reward
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ erro: error.message || 'Não foi possível salvar o resultado.' });
   }
-});
+}
+
+/* Compatibilidade com o front-end existente. Respostas detalhadas continuam sendo ignoradas. */
+app.post('/api/quiz-results', saveQuizRequest);
+/* Novo endpoint semântico para tentativas do quiz. */
+app.post('/api/quiz-attempts', saveQuizRequest);
 
 app.get('/api/activities', (_req, res) => {
   res.json(db.prepare(`SELECT id, slug, name, type, created_at FROM activities ORDER BY id`).all());
@@ -116,7 +141,6 @@ app.get('/login', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'login.html'
 app.get('/perfil', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'perfil.html')));
 app.get('/ebook', (_req, res) => res.redirect('/ebook/energia-sustentavel.html'));
 
-/* A página inicial recebe account.js antes do HTML ser enviado. */
 app.get('/', async (_req, res) => {
   try {
     let html = await fs.readFile(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
