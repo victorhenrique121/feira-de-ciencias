@@ -59,6 +59,10 @@ app.get('/api/quiz-results', async (_req, res) => {
   res.json(resultados);
 });
 
+app.get('/login', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
+});
+
 app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
