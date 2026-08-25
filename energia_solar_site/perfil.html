@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f2f26">
+  <title>Meu perfil — Terceirão 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="/">ENERGIA<b>.</b>SOLAR</a>
+    <nav><a href="/">Voltar ao projeto</a><button id="logout">Sair</button></nav>
+  </header>
+
+  <main class="profile-page">
+    <section class="profile-hero">
+      <div>
+        <span class="kicker">TERCEIRÃO 2026 / PERFIL</span>
+        <h1 id="userName">Carregando...</h1>
+        <p id="userEmail">Seu histórico de aprendizagem em energia solar.</p>
+      </div>
+      <div class="profile-avatar" id="avatar">?</div>
+    </section>
+
+    <section class="stats" aria-label="Resumo do desempenho">
+      <article><small>QUIZZES</small><strong id="statQuizzes">0</strong><span>tentativas</span></article>
+      <article><small>MÉDIA</small><strong id="statAverage">0%</strong><span>de aproveitamento</span></article>
+      <article><small>MELHOR</small><strong id="statBest">0%</strong><span>melhor resultado</span></article>
+      <article><small>ACERTOS</small><strong id="statCorrect">0</strong><span>respostas corretas</span></article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><span class="kicker">EVOLUÇÃO</span><h2>Seu desempenho</h2></div>
+        <span id="trendText">Faça seu primeiro quiz.</span>
+      </div>
+      <div class="chart" id="historyChart"></div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel">
+        <div class="panel-head"><div><span class="kicker">HISTÓRICO</span><h2>Tentativas recentes</h2></div></div>
+        <div id="history" class="history"><div class="loading">Carregando histórico...</div></div>
+      </section>
+
+      <section class="panel reward-panel">
+        <div class="panel-head"><div><span class="kicker">RECOMPENSAS</span><h2>O que você conquistou</h2></div></div>
+        <div id="rewards" class="rewards"><div class="loading">Carregando recompensas...</div></div>
+      </section>
+    </section>
+  </main>
+  <script src="perfil.js"></script>
+</body>
+</html>
