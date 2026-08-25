@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  // A experiência começa pelo cadastro simples do visitante.
+  // Exige a identificação simples do visitante antes de entrar na experiência.
   if (!sessionStorage.getItem("visitante")) {
     window.location.replace("/login");
     return;
@@ -56,45 +56,23 @@
     const total = annual * years;
     const reached = Math.min(100, (total / inv) * 100);
 
-    $("#payback").textContent = `${months.toLocaleString("pt-BR", {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1
-    })} meses`;
-
-    $("#paybackYears").textContent =
-      `≈ ${(months / 12).toLocaleString("pt-BR", {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      })} anos para recuperar o investimento.`;
-
+    $("#payback").textContent = `${months.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} meses`;
+    $("#paybackYears").textContent = `≈ ${(months / 12).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} anos para recuperar o investimento.`;
     $("#investLabel").textContent = money(inv);
     $("#monthLabel").textContent = money(monthly);
     $("#annual").textContent = money(annual);
     $("#progressBar").style.width = `${reached}%`;
     $("#progressText").textContent = `${Math.round(reached)}%`;
-    $("#chartPayback").textContent =
-      `Payback: ${months.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} meses`;
+    $("#chartPayback").textContent = `Payback: ${months.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} meses`;
 
-    const points = [1, Math.min(5, years), years]
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort((a, b) => a - b);
-
-    $("#table").innerHTML = `
-      <table>
-        <thead><tr><th>Tempo</th><th>Economia</th><th>Saldo</th></tr></thead>
-        <tbody>
-          ${points.map((year) => {
-            const economy = annual * year;
-            return `<tr><td>${year} ano${year > 1 ? "s" : ""}</td><td>${money(economy)}</td><td>${money(economy - inv)}</td></tr>`;
-          }).join("")}
-        </tbody>
-      </table>
-    `;
+    const points = [1, Math.min(5, years), years].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    $("#table").innerHTML = `<table><thead><tr><th>Tempo</th><th>Economia</th><th>Saldo</th></tr></thead><tbody>${points.map((year) => { const economy = annual * year; return `<tr><td>${year} ano${year > 1 ? "s" : ""}</td><td>${money(economy)}</td><td>${money(economy - inv)}</td></tr>`; }).join("")}</tbody></table>`;
 
     drawChart(inv, monthly, years);
     updateImpact(inv, monthly, years);
   }
 
+  /* GRÁFICO SVG */
   function drawChart(inv, monthly, years) {
     const chart = $("#financeChart");
     if (!chart) return;
@@ -111,9 +89,7 @@
     const steps = Math.min(60, Math.max(12, Math.ceil(monthsTotal / 3)));
     const points = [];
 
-    for (let m = 0; m <= monthsTotal; m += Math.max(1, Math.round(monthsTotal / steps))) {
-      points.push([x(m), y(Math.min(monthly * m, maxValue))]);
-    }
+    for (let m = 0; m <= monthsTotal; m += Math.max(1, Math.round(monthsTotal / steps))) points.push([x(m), y(Math.min(monthly * m, maxValue))]);
     if (points[points.length - 1][0] !== x(monthsTotal)) points.push([x(monthsTotal), y(Math.min(monthly * monthsTotal, maxValue))]);
 
     const path = points.map((p, i) => `${i ? "L" : "M"} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
@@ -140,24 +116,14 @@
   };
 
   function renderTimeline(selectedMonth = timelineMonth){
-    if (!( $("#financeTimeline"))) return;
+    if (!$("#financeTimeline")) return;
     const {inv, monthly, years} = chartState;
     const totalMonths = Math.max(120, years * 12);
     const payback = inv / monthly;
-    const markers = [
-      {label:"Mês 1", month:1},
-      {label:"Mês 12", month:12},
-      {label:"Payback", month:Math.min(totalMonths, Math.max(1, Math.round(payback)))},
-      {label:"5 anos", month:Math.min(totalMonths, 60)},
-      {label:"10 anos", month:Math.min(totalMonths, 120)}
-    ];
+    const markers = [{label:"Mês 1", month:1},{label:"Mês 12", month:12},{label:"Payback", month:Math.min(totalMonths, Math.max(1, Math.round(payback)))},{label:"5 anos", month:Math.min(totalMonths, 60)},{label:"10 anos", month:Math.min(totalMonths, 120)}];
     const closest = markers.reduce((a,b)=>Math.abs(b.month-selectedMonth)<Math.abs(a.month-selectedMonth)?b:a, markers[0]);
     $("#financeTimeline").innerHTML = markers.map((m,i)=>`<button type="button" class="timeline-item ${m===closest?'active':''}" data-month="${m.month}" aria-label="${m.label}"><span class="timeline-dot">${i+1}</span><span class="timeline-label">${m.label}</span></button>`).join("");
-    $$(".timeline-item").forEach(btn=>btn.addEventListener("click",()=>{
-      timelineMonth=Number(btn.dataset.month);
-      chartMonth.value=String(Math.min(Number(chartMonth.max),timelineMonth));
-      renderInteractiveChart(timelineMonth);
-    }));
+    $$(".timeline-item").forEach(btn=>btn.addEventListener("click",()=>{ timelineMonth=Number(btn.dataset.month); chartMonth.value=String(Math.min(Number(chartMonth.max),timelineMonth)); renderInteractiveChart(timelineMonth); }));
     const info=timelineDescription(closest.label, closest.month, inv, monthly, payback);
     $("#timelineInfo").innerHTML=`<strong>${info.title}</strong><span>${info.text}</span>`;
   }
@@ -209,8 +175,8 @@
     $("#houseNewBill").textContent = money(newBill);
     $("#houseMonthlySave").textContent = money(monthlySave);
     $("#houseAnnualSave").textContent = money(annualSave);
-    $("#housePayback").textContent = `${payback.toLocaleString("pt-BR", {minimumFractionDigits: 1,maximumFractionDigits: 1})} meses`;
-    $("#houseText").textContent = `neste cenário, o investimento seria recuperado em cerca de ${(payback / 12).toLocaleString("pt-BR", {minimumFractionDigits: 1,maximumFractionDigits: 1})} anos.`;
+    $("#housePayback").textContent = `${payback.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} meses`;
+    $("#houseText").textContent = `neste cenário, o investimento seria recuperado em cerca de ${(payback / 12).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} anos.`;
     $("#investimento").value = investment.toFixed(2);
     $("#economia").value = monthlySave.toFixed(2);
     calculate();
@@ -220,44 +186,99 @@
   ["houseKwh", "houseBill", "houseInvestment", "houseSaving"].forEach((id) => $(`#${id}`)?.addEventListener("input", calculateHouse));
 
   /* IMPACTO AMBIENTAL — estimativa didática */
-  function updateImpact(inv, monthlySave, years, kwh = Number($("#houseKwh")?.value || 0)) {
-    const months = Math.max(1, years * 12);
+  function updateImpact(inv, monthlySave, years, kwh = Number($("#houseKwh")?.value || 400)) {
     const annualEnergy = Math.max(0, kwh * 12);
-    const estimatedCo2 = Math.round(annualEnergy * 0.24 * (months / 12));
-    $("#co2Impact").textContent = `${estimatedCo2.toLocaleString("pt-BR")} kg`;
-    $("#energyImpact").textContent = `${annualEnergy.toLocaleString("pt-BR")} kWh`;
+    const co2Factor = 0.24;
+    const co2 = annualEnergy * co2Factor;
+    $("#co2Impact").textContent = `${Math.round(co2).toLocaleString("pt-BR")} kg`;
+    $("#energyImpact").textContent = `${Math.round(annualEnergy).toLocaleString("pt-BR")} kWh`;
   }
 
   $("#calcBtn")?.addEventListener("click", calculate);
   ["investimento", "economia", "anos"].forEach((id) => $(`#${id}`)?.addEventListener("input", calculate));
 
-  /* IDENTIFICAÇÃO DO VISITANTE */
-  const visitante = JSON.parse(sessionStorage.getItem("visitante") || "null");
-  const quizNameInput = $("#quizName");
-  if (quizNameInput && visitante?.nome) quizNameInput.value = visitante.nome;
-
   /* QUIZ */
-  const quizForm = $("#quizForm");
-  quizForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-  });
+  const modal = $("#quizModal");
+  const quiz = $("#quizContainer");
+  const quizBtn = $("#quizBtn");
+  const quizNext = $("#quizNext");
+  const quizScore = $("#quizScore");
+  let quizQuestions = [];
+  let currentQuestion = 0;
+  let score = 0;
+  let answered = false;
+  let quizAnswers = [];
+
+  function shuffle(array) { return [...array].sort(() => Math.random() - 0.5); }
+
+  function startQuiz() {
+    const pool = Array.isArray(window.PERGUNTAS) ? window.PERGUNTAS : (typeof PERGUNTAS !== "undefined" ? PERGUNTAS : []);
+    quizQuestions = shuffle(pool).slice(0, Math.min(8, pool.length));
+    currentQuestion = 0; score = 0; answered = false; quizAnswers = [];
+    quizScore.textContent = ""; quizNext.hidden = true; quizBtn.hidden = false;
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = quizQuestions[currentQuestion];
+    if (!q) { showQuizResult(); return; }
+    const progress = ((currentQuestion) / quizQuestions.length) * 100;
+    const letters = ["A", "B", "C", "D"];
+    quiz.innerHTML = `<div class="quiz-progress"><div class="quiz-progress-top"><span>Questão ${currentQuestion + 1} de ${quizQuestions.length}</span><strong>${Math.round(progress)}%</strong></div><div class="quiz-progress-track"><span style="width:${progress}%"></span></div></div><div class="quiz-meta"><span>⚡ Energia</span><span>＋ Matemática</span></div><article class="question"><h3>${currentQuestion + 1}. ${q.pergunta}</h3><div class="quiz-options">${q.opcoes.map((option, index) => `<button class="quiz-option" type="button" data-answer="${index}"><span class="quiz-letter">${letters[index]}</span><span>${option}</span></button>`).join("")}</div><div class="quiz-feedback" id="quizFeedback" hidden></div><div class="quiz-explanation" id="quizExplanation"></div></article>`;
+    quizBtn.textContent = "Responder"; quizBtn.disabled = false; quizNext.hidden = true; answered = false;
+    $$(".quiz-option").forEach((button) => button.addEventListener("click", () => selectAnswer(Number(button.dataset.answer))));
+  }
+
+  function selectAnswer(answer) {
+    if (answered) return;
+    answered = true;
+    const q = quizQuestions[currentQuestion];
+    quizAnswers[currentQuestion] = { pergunta: q.pergunta, respostaSelecionada: answer, resposta: q.opcoes[answer], correta: q.correta, acertou: answer === q.correta };
+    const options = $$(".quiz-option");
+    const feedback = $("#quizFeedback");
+    const explanation = $("#quizExplanation");
+    options.forEach((button) => { button.disabled = true; const value = Number(button.dataset.answer); if (value === q.correta) button.classList.add("correct"); if (value === answer && value !== q.correta) button.classList.add("wrong"); });
+    if (answer === q.correta) { score++; feedback.textContent = "✓ Correto! Você ganhou 100 pontos."; feedback.className = "quiz-feedback correct"; } else { feedback.textContent = `✕ Não foi dessa vez. Resposta: ${q.opcoes[q.correta]}.`; feedback.className = "quiz-feedback wrong"; }
+    feedback.hidden = false; explanation.textContent = q.explicacao || ""; explanation.classList.add("visible"); quizBtn.disabled = true; quizNext.hidden = false; quizNext.textContent = currentQuestion === quizQuestions.length - 1 ? "Ver resultado" : "Próxima questão";
+  }
+
+  function nextQuestion() { if (!answered) return; currentQuestion++; renderQuestion(); }
+
+  async function saveQuizResult(){
+    const name = ($("#quizName")?.value || JSON.parse(sessionStorage.getItem("visitante") || "{}")?.nome || "Visitante").trim().slice(0,60) || "Visitante";
+    const payload = { nome: name, score, total: quizQuestions.length, percentual: quizQuestions.length ? Math.round((score / quizQuestions.length) * 100) : 0, respostas: quizAnswers, data: new Date().toISOString() };
+    try { const response = await fetch("/api/quiz-results", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); if(!response.ok) throw new Error("Falha ao salvar"); let status=$("#quizSaveStatus"); if(!status){status=document.createElement("div");status.id="quizSaveStatus";status.className="quiz-save-status";quiz.appendChild(status);} status.textContent="✓ Resultado registrado no projeto."; } catch(error) { console.warn("Não foi possível registrar o quiz:", error); }
+  }
+
+  function showQuizResult() {
+    const total = quizQuestions.length;
+    const percentage = total ? Math.round((score / total) * 100) : 0;
+    let title = "Continue investigando!";
+    if (percentage >= 90) title = "Especialista em Energia!"; else if (percentage >= 70) title = "Mandou muito bem!"; else if (percentage >= 50) title = "Bom trabalho!";
+    quiz.innerHTML = `<div class="quiz-result"><div class="quiz-result-icon">✓</div><div class="quiz-result-score">${percentage}%</div><h3>${title}</h3><p>Você acertou <strong>${score} de ${total}</strong> questões. Conhecimento também faz parte da sustentabilidade.</p><div class="quiz-result-bar"><span style="width:${percentage}%"></span></div><strong>${score * 100} pontos</strong></div>`;
+    quizBtn.hidden = false; quizBtn.disabled = false; quizBtn.textContent = "Jogar novamente"; quizNext.hidden = true; saveQuizResult();
+  }
+
+  quizBtn?.addEventListener("click", () => { if (!quizQuestions.length || quizBtn.textContent === "Jogar novamente") { startQuiz(); return; } if (!answered) { const selected = $(".quiz-option.selected"); if (selected) selectAnswer(Number(selected.dataset.answer)); } });
+  quizNext?.addEventListener("click", nextQuestion);
+  quiz?.addEventListener("click", (event) => { const option = event.target.closest(".quiz-option"); if (!option || answered) return; $$(".quiz-option").forEach((btn) => btn.classList.remove("selected")); option.classList.add("selected"); });
+  $("#openQuiz")?.addEventListener("click", () => { modal.classList.add("open"); document.body.classList.add("lock"); startQuiz(); $("#closeQuiz")?.focus(); });
+  function closeModal() { modal.classList.remove("open"); document.body.classList.remove("lock"); }
+  $("#closeQuiz")?.addEventListener("click", closeModal);
+  modal?.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modal?.classList.contains("open")) closeModal(); });
+
+  /* DECISÃO */
+  let selectedDecision = "";
+  $$(".decision-btn").forEach((button) => { button.addEventListener("click", () => { selectedDecision = button.dataset.decision; $$(".decision-btn").forEach((btn) => btn.classList.remove("selected")); button.classList.add("selected"); $("#decisionReason").hidden = false; $("#decisionResult").textContent = ""; }); });
+  $("#saveDecision")?.addEventListener("click", () => { const reason = $("#reasonSelect").value; if (!selectedDecision || !reason) { $("#decisionResult").textContent = "Escolha sua decisão e o principal motivo."; return; } const decisionText = selectedDecision === "sim" ? "Você decidiu investir." : "Você decidiu não investir neste cenário."; $("#decisionResult").textContent = `${decisionText} Principal motivo: ${reason}.`; });
+
+  /* REVEAL */
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("show"); observer.unobserve(entry.target); } }); }, { threshold: 0.08 });
+    $$(".reveal").forEach((element) => observer.observe(element));
+  } else { $$(".reveal").forEach((element) => element.classList.add("show")); }
 
   calculate();
   calculateHouse();
-
-  /* REVEAL */
-  const revealItems = $$(".reveal");
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.08 });
-    revealItems.forEach((item) => observer.observe(item));
-  } else {
-    revealItems.forEach((item) => item.classList.add("visible"));
-  }
 })();
