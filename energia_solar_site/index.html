@@ -4,17 +4,335 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f2f26">
-  <title>Terceirão 2026 — Energia Solar</title>
+  <meta name="description" content="Projeto de Feira de Ciências: energia renovável, sustentabilidade e matemática financeira.">
+  <title>Energia Solar — Vale a Pena?</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<!-- O conteúdo existente do projeto permanece aqui. -->
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="header">
+  <div class="container nav">
+    <a class="logo" href="#inicio">ENERGIA<b>.</b>SOLAR</a>
+    <button class="menu" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks"><i></i></button>
+    <nav class="links" id="navLinks" aria-label="Navegação principal">
+      <a href="#conceito">Conceito</a>
+      <a href="#processo">Como funciona</a>
+      <a href="#sustentabilidade">Sustentabilidade</a>
+      <a href="#casa">Minha casa</a>
+      <a href="#financeira">Finanças</a>
+      <a href="#experimento">Experimento</a>
+      <a href="#decisao">Decisão</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="inicio">
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow">Feira de Ciências • Energia + Economia</div>
+      <h1>Energia renovável.<br><em>Vale a pena?</em></h1>
+      <p class="hero-copy">Uma experiência interativa para descobrir como uma fonte limpa pode se transformar em uma decisão financeira — usando ciência, sustentabilidade e matemática.</p>
+      <div class="actions">
+        <a class="btn primary" href="#casa">Simular minha casa</a>
+        <a class="btn secondary" href="#conceito">Começar pelo conceito</a>
+      </div>
+    </div>
+    <figure class="hero-image">
+      <img src="https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=82" alt="Painéis solares em uma área aberta" fetchpriority="high">
+      <figcaption class="photo-tag">Geração renovável na prática</figcaption>
+    </figure>
+  </div>
+  <div class="container band">
+    <div><strong>RENOVÁVEL</strong><span>Fonte solar</span></div>
+    <div><strong>ECONÔMICO</strong><span>Payback simples</span></div>
+    <div><strong>EDUCATIVO</strong><span>Ciência aplicada</span></div>
+  </div>
+</section>
+
+<section class="section reveal" id="conceito">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">01 / Conceito</div><h2>O que estamos medindo?</h2></div>
+      <p class="section-intro">A energia solar fotovoltaica utiliza a luz do Sol para produzir eletricidade por meio de células presentes nos painéis solares.</p>
+    </div>
+    <div class="cards">
+      <article class="card"><div class="icon">☀</div><h3>Fonte renovável</h3><p>O Sol fornece energia continuamente em escala humana.</p></article>
+      <article class="card"><div class="icon">⚡</div><h3>Geração elétrica</h3><p>As células fotovoltaicas transformam a radiação solar em energia elétrica.</p></article>
+      <article class="card"><div class="icon">↻</div><h3>Uso responsável</h3><p>O projeto relaciona tecnologia, recursos naturais e tomada de decisão.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="processo">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">02 / Processo</div><h2>Da luz à eletricidade.</h2></div>
+      <p class="section-intro">Uma sequência curta para visualizar o princípio do sistema fotovoltaico.</p>
+    </div>
+    <div class="process">
+      <article><div class="num">01</div><strong>Luz do Sol</strong><p>A radiação solar chega às células do painel.</p></article>
+      <article><div class="num">02</div><strong>Painel solar</strong><p>As células captam a energia da luz.</p></article>
+      <article><div class="num">03</div><strong>Energia elétrica</strong><p>A energia solar é convertida em eletricidade.</p></article>
+      <article><div class="num">04</div><strong>Uso da energia</strong><p>A eletricidade pode alimentar equipamentos.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="sustentabilidade">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">03 / Sustentabilidade</div><h2>O impacto não termina na tomada.</h2></div>
+      <p class="section-intro">A proposta é olhar para a tecnologia também pelo lado ecológico: fonte renovável, diversificação e geração próxima ao consumo.</p>
+    </div>
+    <div class="photo-grid">
+      <div class="photo-card"><img src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1200&q=80" loading="lazy" alt="Paisagem de natureza representando preservação ambiental"></div>
+      <div class="cards one">
+        <article class="card"><div class="icon">↗</div><h3>Menor dependência fóssil</h3><p>A geração solar pode ajudar a diversificar a matriz elétrica e diminuir a dependência de combustíveis fósseis.</p></article>
+        <article class="card"><div class="icon">◎</div><h3>Geração local</h3><p>Painéis podem gerar energia próximo ao local de consumo.</p></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="casa">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">04 / Minha casa</div><h2>Quanto uma casa poderia economizar?</h2></div>
+      <p class="section-intro">Escolha uma situação parecida com a de uma residência e veja uma estimativa educativa de economia, investimento e retorno.</p>
+    </div>
+
+    <div class="house-layout">
+      <div class="form-card">
+        <h3>Simulador residencial</h3>
+        <p>Altere os dados para visualizar o cenário.</p>
+        <div class="fields">
+          <label>Consumo mensal (kWh)
+            <input id="houseKwh" type="number" min="1" step="1" value="400">
+          </label>
+          <label>Valor atual da conta (R$)
+            <input id="houseBill" type="number" min="1" step=".01" value="400">
+          </label>
+          <label>Investimento no sistema (R$)
+            <input id="houseInvestment" type="number" min="1" step=".01" value="8000">
+          </label>
+          <label>Percentual de economia (%)
+            <input id="houseSaving" type="number" min="1" max="100" step="1" value="80">
+          </label>
+        </div>
+      </div>
+
+      <div class="results house-results" aria-live="polite">
+        <div class="result-label">Estimativa da residência</div>
+        <div class="house-main"><strong id="houseNewBill">R$ 80,00</strong><span>conta estimada após a economia</span></div>
+        <div class="metrics">
+          <div class="metric"><small>Economia mensal</small><strong id="houseMonthlySave">R$ 320,00</strong></div>
+          <div class="metric"><small>Economia anual</small><strong id="houseAnnualSave">R$ 3.840,00</strong></div>
+          <div class="metric"><small>Payback</small><strong id="housePayback">25,0 meses</strong></div>
+        </div>
+        <div class="mini-callout"><strong>Leitura rápida:</strong> <span id="houseText">neste cenário, o investimento seria recuperado em cerca de 2,1 anos.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="financeira">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">05 / Matemática financeira</div><h2>Quando o investimento se paga?</h2></div>
+      <p class="section-intro">Use o payback simples para transformar o investimento e a economia mensal em um prazo de retorno fácil de visualizar.</p>
+    </div>
+
+    <div class="finance">
+      <div class="form-card">
+        <h3>Simulador de payback</h3>
+        <p>Troque os valores e acompanhe o resultado instantaneamente.</p>
+        <div class="fields">
+          <label>Investimento inicial (R$)<input id="investimento" type="number" min="0" step=".01" value="8000"></label>
+          <label>Economia mensal (R$)<input id="economia" type="number" min="0" step=".01" value="250"></label>
+          <label>Período da simulação (anos)<input id="anos" type="number" min="1" step="1" value="10"></label>
+          <button class="btn" id="calcBtn">Atualizar cálculo</button>
+        </div>
+      </div>
+
+      <div class="results" aria-live="polite">
+        <div class="result-label">Tempo de retorno</div>
+        <div class="result-number" id="payback">32,0 meses</div>
+        <p id="paybackYears">≈ 2,7 anos para recuperar o investimento.</p>
+
+        <div class="metrics">
+          <div class="metric"><small>Investimento</small><strong id="investLabel">R$ 8.000,00</strong></div>
+          <div class="metric"><small>Economia mensal</small><strong id="monthLabel">R$ 250,00</strong></div>
+          <div class="metric"><small>Economia anual</small><strong id="annual">R$ 3.000,00</strong></div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Recuperação no período</span><span id="progressText">0%</span></div>
+          <div class="progress"><span id="progressBar"></span></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-head"><strong>Investimento × economia acumulada</strong><span id="chartPayback">Payback: 32 meses</span></div>
+          <div class="chart" id="financeChart" aria-label="Gráfico de investimento e economia acumulada"></div>
+          <button class="chart-open-btn" id="openChart" type="button">🔎 Explorar gráfico</button>
+        </div>
+
+        <div class="table" id="table"></div>
+        <p class="note">Modelo educativo de payback simples. Um sistema real depende de consumo, tarifa, dimensionamento, equipamentos, instalação e condições de geração.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="impacto">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">06 / Impacto ambiental</div><h2>Além da economia: qual é o impacto?</h2></div>
+      <p class="section-intro">Use o cenário financeiro acima para visualizar indicadores ambientais de forma didática. Os números são estimativas simplificadas, não uma medição de um sistema real.</p>
+    </div>
+
+    <div class="impact-grid">
+      <article class="impact-card"><span class="impact-icon">🌱</span><small>CO₂ potencialmente evitado</small><strong id="co2Impact">1.152 kg</strong><p>estimativa educativa para o período selecionado</p></article>
+      <article class="impact-card"><span class="impact-icon">⚡</span><small>Energia equivalente</small><strong id="energyImpact">4.800 kWh</strong><p>estimativa anual baseada no cenário residencial</p></article>
+      <article class="impact-card"><span class="impact-icon">☀</span><small>Fonte renovável</small><strong>Solar</strong><p>energia proveniente da radiação do Sol</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="experimento">
+  <div class="container">
+    <div class="section-head">
+      <div><div class="kicker">07 / Nosso experimento</div><h2>Da maquete para a decisão.</h2></div>
+      <p class="section-intro">A parte prática transforma o conceito em uma experiência observável durante a Feira de Ciências.</p>
+    </div>
+
+    <div class="experiment">
+      <div class="experiment-photo">
+        <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1000&q=80" loading="lazy" alt="Paisagem representando geração de energia renovável">
+      </div>
+      <div class="experiment-content">
+        <div class="experiment-step"><span>01</span><div><strong>Hipótese</strong><p>Uma fonte solar pode produzir energia e reduzir gastos quando o sistema é dimensionado adequadamente.</p></div></div>
+        <div class="experiment-step"><span>02</span><div><strong>Materiais</strong><p>Mini painel solar, fios, LED, interruptor e base para a maquete.</p></div></div>
+        <div class="experiment-step"><span>03</span><div><strong>Procedimento</strong><p>Expor o painel à luz, observar a geração e comparar o comportamento do circuito em diferentes condições.</p></div></div>
+        <div class="experiment-step"><span>04</span><div><strong>Conclusão</strong><p>Relacionar a observação física com os cálculos de economia, payback e sustentabilidade.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="quiz">
+  <div class="container">
+    <div class="quiz-cta">
+      <div>
+        <div class="kicker lime">08 / Desafio</div>
+        <h2>Você domina energia + economia?</h2>
+        <p>Responda perguntas sorteadas, acumule pontos e veja sua classificação.</p>
+      </div>
+      <button class="btn" id="openQuiz">Começar desafio</button>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal" id="decisao">
+  <div class="container">
+    <div class="decision">
+      <div>
+        <div class="kicker lime">09 / Sua decisão</div>
+        <h2>Com esses dados, você investiria?</h2>
+        <p>Escolha uma resposta e registre a sua principal motivação. Esta interação é educativa e não representa uma recomendação financeira.</p>
+      </div>
+
+      <div class="decision-buttons">
+        <button class="decision-btn yes" data-decision="sim">✓ Sim, investiria</button>
+        <button class="decision-btn no" data-decision="nao">× Não investiria</button>
+      </div>
+
+      <div class="decision-reason" id="decisionReason" hidden>
+        <label>Qual foi o principal motivo?
+          <select id="reasonSelect">
+            <option value="">Selecione...</option>
+            <option>Economia financeira</option>
+            <option>Sustentabilidade</option>
+            <option>Payback rápido</option>
+            <option>Investimento inicial alto</option>
+            <option>Prefiro esperar mais dados</option>
+          </select>
+        </label>
+        <button class="btn primary" id="saveDecision">Registrar decisão</button>
+      </div>
+
+      <div class="decision-result" id="decisionResult" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal">
+  <div class="container">
+    <div class="project">
+      <div class="project-grid">
+        <div>
+          <div class="kicker lime">10 / Conclusão</div>
+          <h2>Energia solar não é só uma questão de tecnologia.</h2>
+          <p>É uma decisão que envolve ciência, recursos naturais, investimento, economia e planejamento. O objetivo do nosso projeto é mostrar como esses assuntos podem ser analisados juntos.</p>
+        </div>
+        <div class="project-summary">
+          <div><strong>CIÊNCIA</strong><span>entender como funciona</span></div>
+          <div><strong>SUSTENTABILIDADE</strong><span>avaliar o impacto</span></div>
+          <div><strong>FINANÇAS</strong><span>calcular o retorno</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container"><strong>ENERGIA.SOLAR</strong> — Feira de Ciências<br>Energia renovável + sustentabilidade + matemática financeira.</div>
+</footer>
+
+<div class="modal" id="quizModal" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+  <div class="modal-box quiz-modal-box">
+    <button class="close" id="closeQuiz" aria-label="Fechar quiz">×</button>
+    <div class="kicker">Desafio</div>
+    <h2 id="quizTitle">Teste seu conhecimento</h2>
+    <div class="quiz-name-field"><label for="quizName">Seu nome <span>(opcional)</span></label><input id="quizName" type="text" maxlength="60" placeholder="Como podemos registrar você?"></div>
+    <div id="quizContainer"></div>
+    <div class="quiz-actions">
+      <button class="btn primary" id="quizBtn">Responder</button>
+      <button class="btn secondary" id="quizNext" hidden>Próxima</button>
+    </div>
+    <strong id="quizScore" aria-live="polite" class="quiz-score"></strong>
+  </div>
+</div>
+
+<div class="modal" id="chartModal" role="dialog" aria-modal="true" aria-labelledby="chartModalTitle" aria-hidden="true">
+  <div class="modal-box chart-modal-box">
+    <button class="close" id="closeChart" aria-label="Fechar gráfico">×</button>
+    <div class="kicker">Linha do tempo financeira</div>
+    <h2 id="chartModalTitle">Acompanhe o retorno mês a mês</h2>
+    <p class="chart-modal-intro">Clique nos marcos abaixo para entender o que acontece com o investimento em cada etapa.</p>
+    <div class="timeline" id="financeTimeline" aria-label="Marcos da linha do tempo financeira"></div>
+    <div class="timeline-info" id="timelineInfo" aria-live="polite"></div>
+    <div class="interactive-chart" id="interactiveChart"></div>
+    <label class="timeline-slider-label" for="chartMonth">Explorar mês: <strong id="chartMonthLabel">32</strong></label>
+    <input id="chartMonth" class="timeline-slider" type="range" min="0" max="120" value="32" step="1">
+    <div class="chart-modal-metrics">
+      <div><small>Economia acumulada</small><strong id="chartSaved">R$ 8.000,00</strong></div>
+      <div><small>Saldo a recuperar</small><strong id="chartBalance">R$ 0,00</strong></div>
+      <div><small>Status</small><strong id="chartStatus">Payback atingido</strong></div>
+    </div>
+  </div>
+</div>
+
 <script src="perguntas.js"></script>
 <script src="app.js"></script>
-<script src="account.js"></script>
-<script src="quiz-ui.js"></script>
 </body>
 </html>
