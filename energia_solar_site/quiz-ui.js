@@ -1,404 +1,128 @@
 (() => {
   'use strict';
-
-  const $ = (selector) => document.querySelector(selector);
-  const $$ = (selector) => [...document.querySelectorAll(selector)];
-
-  const modal = $('#quizModal');
-  const quiz = $('#quizContainer');
-  const quizBtn = $('#quizBtn');
-  const quizNext = $('#quizNext');
-
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const modal = $('#quizModal'), quiz = $('#quizContainer'), quizBtn = $('#quizBtn'), quizNext = $('#quizNext');
   if (!modal || !quiz || !quizBtn || !quizNext) return;
 
-  const imageUrls = [
+  const images = [
     'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=82',
     'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1200&q=82',
     'https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1200&q=82',
-    'https://images.unsplash.com/photo-1509390670806-7dcb9f7b6f4a?auto=format&fit=crop&w=1200&q=82',
     'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1200&q=82',
-    'https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&w=1200&q=82',
-    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=82',
-    'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=82'
+    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=82'
   ];
 
-  const style = document.createElement('style');
-  style.textContent = `
-    .quiz-image-wrap{margin:16px 0 20px;border-radius:16px;overflow:hidden;background:#eaf0eb;aspect-ratio:16/7}
-    .quiz-image-wrap img{width:100%;height:100%;display:block;object-fit:cover}
-    .quiz-option.selected{border-color:#b7d45f!important;background:#d8f581!important;color:#10201b!important;transform:translateY(-1px)}
-    .quiz-option{transition:transform .15s ease,background .15s ease,border-color .15s ease,opacity .15s ease}
-    .quiz-option:disabled{cursor:default}
-    .quiz-confirm-help{margin:12px 0 0;color:#62736c;font-size:13px}
-    .quiz-points-badge{display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:7px 10px;border-radius:999px;background:#eef6e5;color:#36552b;font-weight:700;font-size:13px}
-    .quiz-total-points{font-size:18px;margin-top:12px;color:#17352c}
-    .quiz-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}
-    .quiz-result-stat{padding:16px;border:1px solid #dfe9e3;border-radius:14px;background:#f8fbf8}
-    .quiz-result-stat small{display:block;color:#6b7b74;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
-    .quiz-result-stat strong{display:block;margin-top:5px;font:700 25px/1.1 "Space Grotesk",sans-serif;color:#102f26}
-    .quiz-result-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
-    .quiz-save-status{margin-top:12px;color:#62736c;font-size:13px}
-    .quiz-loading{display:inline-flex;align-items:center;gap:8px}
-    .quiz-spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:quizSpin .7s linear infinite}
-    @keyframes quizSpin{to{transform:rotate(360deg)}}
-    @media(max-width:560px){.quiz-result-grid{grid-template-columns:1fr}}
-  `;
-  document.head.appendChild(style);
+  let questions = [], currentQuestionIndex = 0, score = 0, totalScore = 0;
+  let isFinished = false, selectedAnswer = null, answered = false, startedAt = 0;
+  let currentBasePoints = 0, saving = false;
 
-  let questions = [];
-  let current = 0;
-  let correctCount = 0;
-  let totalPoints = 0;
-  let selected = null;
-  let answered = false;
-  let startedAt = 0;
-  let saving = false;
-
-  const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
-  const randomBasePoints = () => Math.floor(Math.random() * 10) + 4; // 4 a 13, sempre inteiro.
-  const finalPoints = (base, isCorrect) => isCorrect ? Math.round(base * 1.2) : base;
-
-  function getVisitor() {
-    try { return JSON.parse(sessionStorage.getItem('visitante') || '{}'); }
-    catch { return {}; }
-  }
+  const clearQuizStorage = () => {
+    ['quizFinished','quizCompleted','quizState','quizLastResult'].forEach(k => {
+      sessionStorage.removeItem(k); localStorage.removeItem(k);
+    });
+  };
+  const visitor = () => { try { return JSON.parse(sessionStorage.getItem('visitante') || '{}'); } catch { return {}; } };
+  const shuffle = a => [...a].sort(() => Math.random() - .5);
+  const basePoints = () => Math.floor(Math.random() * 10) + 4;
+  const earnedPoints = (base, correct) => correct ? Math.round(base * 1.2) : base;
 
   function resetQuiz() {
+    clearQuizStorage();
     const pool = Array.isArray(window.PERGUNTAS) ? window.PERGUNTAS : [];
     questions = shuffle(pool).slice(0, Math.min(8, pool.length));
-    current = 0;
-    correctCount = 0;
-    totalPoints = 0;
-    selected = null;
-    answered = false;
-    saving = false;
-    startedAt = Date.now();
-
+    currentQuestionIndex = 0; score = 0; totalScore = 0; isFinished = false;
+    selectedAnswer = null; answered = false; saving = false; startedAt = Date.now();
     sessionStorage.setItem('quizStartedAt', String(startedAt));
-    sessionStorage.removeItem('quizLastResult');
-
-    quizBtn.hidden = false;
-    quizNext.hidden = true;
-    quizBtn.disabled = true;
-    quizBtn.textContent = 'Confirmar Resposta';
-
-    renderQuestion();
+    quizBtn.hidden = false; quizBtn.disabled = true; quizBtn.textContent = 'Confirmar Resposta';
+    quizNext.hidden = true; renderQuestion();
   }
 
   function renderQuestion() {
-    const q = questions[current];
-    if (!q) {
-      showResult();
-      return;
-    }
-
-    selected = null;
-    answered = false;
-    const progress = Math.round((current / questions.length) * 100);
-    const letters = ['A', 'B', 'C', 'D'];
-    const image = imageUrls[current % imageUrls.length];
-
+    if (isFinished) return showResult();
+    const q = questions[currentQuestionIndex];
+    if (!q) return;
+    selectedAnswer = null; answered = false; currentBasePoints = basePoints();
+    const letters = ['A','B','C','D'];
+    const progress = Math.round((currentQuestionIndex / questions.length) * 100);
     quiz.innerHTML = `
-      <div class="quiz-progress">
-        <div class="quiz-progress-top">
-          <span>Questão ${current + 1} de ${questions.length}</span>
-          <strong>${progress}%</strong>
-        </div>
-        <div class="quiz-progress-track"><span style="width:${progress}%"></span></div>
-      </div>
-      <div class="quiz-meta"><span>⚡ Energia</span><span>＋ Matemática</span></div>
+      <div class="quiz-progress"><div class="quiz-progress-top"><span>Questão ${currentQuestionIndex + 1} de ${questions.length}</span><strong>${progress}%</strong></div><div class="quiz-progress-track"><span style="width:${progress}%"></span></div></div>
       <article class="question">
-        <div class="quiz-image-wrap">
-          <img src="${image}" alt="Imagem ilustrativa relacionada a energia e sustentabilidade" loading="lazy">
-        </div>
-        <h3>${current + 1}. ${q.pergunta}</h3>
-        <div class="quiz-options">
-          ${q.opcoes.map((option, index) => `
-            <button class="quiz-option" type="button" data-answer="${index}" aria-pressed="false">
-              <span class="quiz-letter">${letters[index]}</span><span>${option}</span>
-            </button>
-          `).join('')}
-        </div>
-        <div class="quiz-points-badge">🎯 Pontuação da pergunta: ${currentQuestionBasePoints} pontos base</div>
-        <p class="quiz-confirm-help">Selecione uma alternativa. O botão <strong>Confirmar Resposta</strong> será liberado em seguida.</p>
-        <div class="quiz-feedback" id="quizFeedback" hidden></div>
-        <div class="quiz-explanation" id="quizExplanation"></div>
-      </article>
-    `;
-
-    quizBtn.hidden = false;
-    quizBtn.disabled = true;
-    quizBtn.textContent = 'Confirmar Resposta';
-    quizNext.hidden = true;
+        <div class="quiz-image-wrap"><img src="${images[currentQuestionIndex % images.length]}" alt="Energia e sustentabilidade" loading="lazy"></div>
+        <h3>${currentQuestionIndex + 1}. ${q.pergunta}</h3>
+        <div class="quiz-options">${q.opcoes.map((o,i) => `<button class="quiz-option" type="button" data-answer="${i}" aria-pressed="false"><span class="quiz-letter">${letters[i]}</span><span>${o}</span></button>`).join('')}</div>
+        <div class="quiz-points-badge">🎯 ${currentBasePoints} pontos base nesta pergunta</div>
+        <p class="quiz-confirm-help">Selecione uma alternativa e clique em <strong>Confirmar Resposta</strong>.</p>
+        <div id="quizFeedback" class="quiz-feedback" hidden></div><div id="quizExplanation" class="quiz-explanation"></div>
+      </article>`;
+    quizBtn.hidden = false; quizBtn.disabled = true; quizBtn.textContent = 'Confirmar Resposta'; quizNext.hidden = true;
   }
 
-  // Cada pergunta recebe uma única pontuação base ao ser renderizada.
-  let currentQuestionBasePoints = 0;
-
-  function renderQuestion() {
-    const q = questions[current];
-    if (!q) return showResult();
-
-    selected = null;
-    answered = false;
-    currentQuestionBasePoints = randomBasePoints();
-
-    const progress = Math.round((current / questions.length) * 100);
-    const letters = ['A', 'B', 'C', 'D'];
-    const image = imageUrls[current % imageUrls.length];
-
-    quiz.innerHTML = `
-      <div class="quiz-progress">
-        <div class="quiz-progress-top">
-          <span>Questão ${current + 1} de ${questions.length}</span>
-          <strong>${progress}%</strong>
-        </div>
-        <div class="quiz-progress-track"><span style="width:${progress}%"></span></div>
-      </div>
-      <div class="quiz-meta"><span>⚡ Energia</span><span>＋ Matemática</span></div>
-      <article class="question">
-        <div class="quiz-image-wrap">
-          <img src="${image}" alt="Imagem ilustrativa relacionada a energia e sustentabilidade" loading="lazy">
-        </div>
-        <h3>${current + 1}. ${q.pergunta}</h3>
-        <div class="quiz-options">
-          ${q.opcoes.map((option, index) => `
-            <button class="quiz-option" type="button" data-answer="${index}" aria-pressed="false">
-              <span class="quiz-letter">${letters[index]}</span><span>${option}</span>
-            </button>
-          `).join('')}
-        </div>
-        <div class="quiz-points-badge">🎯 ${currentQuestionBasePoints} pontos base nesta pergunta</div>
-        <p class="quiz-confirm-help">Selecione uma alternativa. O botão <strong>Confirmar Resposta</strong> será liberado em seguida.</p>
-        <div class="quiz-feedback" id="quizFeedback" hidden></div>
-        <div class="quiz-explanation" id="quizExplanation"></div>
-      </article>
-    `;
-
-    quizBtn.hidden = false;
-    quizBtn.disabled = true;
-    quizBtn.textContent = 'Confirmar Resposta';
-    quizNext.hidden = true;
-  }
-
-  function selectOption(option) {
-    if (answered || !option || option.disabled) return;
-
-    const answer = Number(option.dataset.answer);
-    if (!Number.isInteger(answer) || answer < 0 || answer >= questions[current].opcoes.length) return;
-
-    selected = answer;
-    $$('.quiz-option').forEach((button) => {
-      const active = button === option;
-      button.classList.toggle('selected', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-
+  function selectAnswer(button) {
+    if (answered || !button) return;
+    const n = Number(button.dataset.answer), q = questions[currentQuestionIndex];
+    if (!Number.isInteger(n) || !q?.opcoes?.[n]) return;
+    selectedAnswer = n;
+    $$('.quiz-option').forEach(b => { const active = b === button; b.classList.toggle('selected', active); b.setAttribute('aria-pressed', String(active)); });
     quizBtn.disabled = false;
-    quizBtn.focus();
-  }
-
-  function setConfirmLoading(isLoading) {
-    quizBtn.disabled = true;
-    quizBtn.innerHTML = isLoading
-      ? '<span class="quiz-loading"><span class="quiz-spinner"></span> Confirmando...</span>'
-      : 'Confirmar Resposta';
   }
 
   function confirmAnswer() {
-    if (answered || selected === null || saving) return;
-
-    const q = questions[current];
-    if (!q || !Array.isArray(q.opcoes) || !q.opcoes[selected]) return;
-
-    setConfirmLoading(true);
-    answered = true;
-
-    const options = $$('.quiz-option');
+    if (answered || selectedAnswer === null || saving || isFinished) return;
+    const q = questions[currentQuestionIndex]; if (!q) return;
+    answered = true; quizBtn.disabled = true; quizBtn.textContent = 'Confirmando...';
+    const correct = selectedAnswer === Number(q.correta), points = earnedPoints(currentBasePoints, correct);
+    if (correct) score++; totalScore += points;
+    $$('.quiz-option').forEach(b => { b.disabled = true; const n = Number(b.dataset.answer); if (n === Number(q.correta)) b.classList.add('correct'); if (n === selectedAnswer && n !== Number(q.correta)) b.classList.add('wrong'); });
     const feedback = $('#quizFeedback');
-    const explanation = $('#quizExplanation');
-    const isCorrect = selected === Number(q.correta);
-    const earnedPoints = finalPoints(currentQuestionBasePoints, isCorrect);
-
-    if (isCorrect) correctCount += 1;
-    totalPoints += earnedPoints;
-
-    options.forEach((button) => {
-      button.disabled = true;
-      const value = Number(button.dataset.answer);
-      if (value === Number(q.correta)) button.classList.add('correct');
-      if (value === selected && value !== Number(q.correta)) button.classList.add('wrong');
-    });
-
-    if (isCorrect) {
-      feedback.textContent = `✓ Correto! +${earnedPoints} pontos (${currentQuestionBasePoints} × 1,2).`;
-      feedback.className = 'quiz-feedback correct';
-    } else {
-      feedback.textContent = `✕ Incorreto. +${earnedPoints} pontos. Resposta: ${q.opcoes[q.correta]}.`;
-      feedback.className = 'quiz-feedback wrong';
-    }
-
-    feedback.hidden = false;
-    explanation.textContent = q.explicacao || '';
-    explanation.classList.add('visible');
-
-    const totalPointsLabel = document.createElement('div');
-    totalPointsLabel.className = 'quiz-total-points';
-    totalPointsLabel.innerHTML = `Total da rodada: <strong>${totalPoints} pontos</strong>`;
-    quiz.querySelector('.question')?.appendChild(totalPointsLabel);
-
-    if (current === questions.length - 1) {
-      quizNext.hidden = true;
-      window.setTimeout(showResult, 650);
-    } else {
-      quizBtn.disabled = true;
-      quizBtn.textContent = 'Resposta confirmada';
-      quizNext.hidden = false;
-      quizNext.disabled = false;
-      quizNext.textContent = 'Próxima questão';
-    }
+    if (feedback) { feedback.hidden = false; feedback.className = `quiz-feedback ${correct ? 'correct' : 'wrong'}`; feedback.textContent = correct ? `✓ Correto! +${points} pontos.` : `✕ Incorreto. +${points} pontos. Resposta: ${q.opcoes[q.correta]}.`; }
+    const explanation = $('#quizExplanation'); if (explanation) { explanation.textContent = q.explicacao || ''; explanation.classList.add('visible'); }
+    if (currentQuestionIndex === questions.length - 1) { isFinished = true; setTimeout(showResult, 450); }
+    else { quizBtn.textContent = 'Resposta confirmada'; quizNext.hidden = false; quizNext.disabled = false; quizNext.textContent = 'Próxima questão'; }
   }
 
-  function nextQuestion() {
-    if (!answered || current >= questions.length - 1) return;
-    current += 1;
-    renderQuestion();
-  }
+  function nextQuestion() { if (!answered || isFinished) return; currentQuestionIndex++; renderQuestion(); }
 
   async function saveResult() {
-    if (saving) return null;
-    saving = true;
-
-    const total = questions.length;
-    const percentage = total ? Math.round((correctCount / total) * 100) : 0;
-    const timeSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-    const visitor = getVisitor();
-
-    if (!visitor.id) {
-      saving = false;
-      return null;
-    }
-
+    if (saving) return null; saving = true;
+    const v = visitor(), total = questions.length, percentage = total ? Math.round(score / total * 100) : 0;
+    if (!v.id) { saving = false; return null; }
     try {
-      const response = await fetch('/api/quiz-attempts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: visitor.id,
-          nome: visitor.nome || 'Visitante',
-          email: visitor.email || '',
-          score: correctCount,
-          total,
-          points: totalPoints,
-          timeSeconds
-        })
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.erro || 'Falha ao salvar resultado');
-
-      sessionStorage.setItem('quizLastResult', JSON.stringify({
-        correctCount,
-        total,
-        points: totalPoints,
-        totalPoints: data.totalPoints,
-        percentage,
-        savedAt: new Date().toISOString()
-      }));
-
-      return data;
-    } catch (error) {
-      console.warn('Não foi possível registrar o quiz:', error);
-      return null;
-    } finally {
-      saving = false;
-    }
+      const r = await fetch('/api/quiz-attempts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:v.id,nome:v.nome||'Visitante',email:v.email||'',score,total,points:totalScore,timeSeconds:Math.max(0,Math.floor((Date.now()-startedAt)/1000))}) });
+      const data = await r.json().catch(() => ({})); if (!r.ok) throw new Error(data.erro || 'Falha ao salvar');
+      sessionStorage.setItem('quizLastResult', JSON.stringify({score,total,points:totalScore,totalPoints:data.totalPoints,percentage})); return data;
+    } catch(e) { console.warn('Não foi possível salvar o resultado:', e); return null; }
+    finally { saving = false; }
   }
 
   async function showResult() {
-    const total = questions.length;
-    const percentage = total ? Math.round((correctCount / total) * 100) : 0;
-
-    let title = 'Continue investigando!';
-    if (percentage >= 90) title = 'Especialista em Energia!';
-    else if (percentage >= 70) title = 'Mandou muito bem!';
-    else if (percentage >= 50) title = 'Bom trabalho!';
-
-    quiz.innerHTML = `
-      <div class="quiz-result">
-        <div class="quiz-result-icon">✓</div>
-        <div class="quiz-result-score">${percentage}%</div>
-        <h3>${title}</h3>
-        <div class="quiz-result-grid">
-          <div class="quiz-result-stat"><small>Acertos</small><strong>${correctCount}/${total}</strong></div>
-          <div class="quiz-result-stat"><small>Pontos da rodada</small><strong>${totalPoints}</strong></div>
-          <div class="quiz-result-stat"><small>Desempenho</small><strong>${percentage}%</strong></div>
-        </div>
-        <p>Você acumulou <strong>${totalPoints} pontos</strong> nesta rodada.</p>
-        <div class="quiz-result-bar"><span style="width:${percentage}%"></span></div>
-        <div id="quizSaveStatus" class="quiz-save-status" aria-live="polite">Salvando sua pontuação no perfil...</div>
-      </div>
-    `;
-
-    quizBtn.hidden = false;
-    quizBtn.disabled = false;
-    quizBtn.textContent = 'Jogar novamente';
-    quizNext.hidden = true;
-
-    const result = await saveResult();
-    const status = $('#quizSaveStatus');
-    if (status) {
-      status.textContent = result
-        ? `✓ +${result.points} pontos adicionados. Total da conta: ${result.totalPoints} pontos.`
-        : 'Não foi possível salvar agora. Verifique sua conexão e tente novamente.';
-    }
+    if (!isFinished) return renderQuestion();
+    const total = questions.length, percentage = total ? Math.round(score / total * 100) : 0;
+    quiz.innerHTML = `<div class="quiz-result"><div class="quiz-result-icon">✓</div><div class="quiz-result-score">${percentage}%</div><h3>${percentage>=90?'Especialista em Energia!':percentage>=70?'Mandou muito bem!':percentage>=50?'Bom trabalho!':'Continue investigando!'}</h3><div class="quiz-result-grid"><div class="quiz-result-stat"><small>Acertos</small><strong>${score}/${total}</strong></div><div class="quiz-result-stat"><small>Pontos da rodada</small><strong>${totalScore}</strong></div><div class="quiz-result-stat"><small>Desempenho</small><strong>${percentage}%</strong></div></div><p>Você acumulou <strong>${totalScore} pontos</strong> nesta rodada.</p><div id="quizSaveStatus" class="quiz-save-status">Salvando sua pontuação...</div><div class="quiz-result-actions"><button class="btn secondary" id="quizBackHome" type="button">Voltar ao Início</button><button class="btn primary" id="quizRestart" type="button">Reiniciar Quiz</button></div></div>`;
+    quizBtn.hidden = true; quizNext.hidden = true;
+    const saved = await saveResult(); const status = $('#quizSaveStatus'); if (status) status.textContent = saved ? `Pontuação salva! Total na conta: ${saved.totalPoints ?? totalScore} pontos.` : 'Resultado exibido. Não foi possível sincronizar com o perfil.';
+    $('#quizRestart')?.addEventListener('click', resetQuiz);
+    $('#quizBackHome')?.addEventListener('click', () => { resetQuiz(); modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('lock'); location.hash='#inicio'; window.scrollTo({top:0,behavior:'smooth'}); });
   }
 
-  // CAPTURE: intercepta apenas os controles do quiz antes dos listeners antigos do app.js.
-  // Isso corrige o conflito em que o clique da alternativa podia disparar uma ação diferente.
-  document.addEventListener('click', (event) => {
-    const option = event.target.closest?.('#quizContainer .quiz-option');
-    if (option) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      selectOption(option);
-      return;
-    }
-
-    const confirm = event.target.closest?.('#quizBtn');
-    if (confirm) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (quizBtn.textContent.trim() === 'Jogar novamente') resetQuiz();
-      else confirmAnswer();
-      return;
-    }
-
-    const next = event.target.closest?.('#quizNext');
-    if (next) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      nextQuestion();
-      return;
-    }
-
-    const open = event.target.closest?.('#openQuiz');
-    if (open) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('lock');
-      resetQuiz();
-      $('#closeQuiz')?.focus();
-    }
+  // Captura antes do app.js legado: impede que seus listeners iniciem o quiz antigo.
+  document.addEventListener('click', event => {
+    const trigger = event.target.closest('#openQuiz, [data-open-quiz], .open-quiz');
+    if (!trigger) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    clearQuizStorage(); resetQuiz(); modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.classList.add('lock');
   }, true);
 
-  // Fecha o quiz sem depender do listener do app.js.
-  $('#closeQuiz')?.addEventListener('click', (event) => {
-    event.preventDefault();
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('lock');
+  document.addEventListener('click', event => {
+    if (!event.target.closest('#quizBtn')) return;
+    event.preventDefault(); event.stopImmediatePropagation(); confirmAnswer();
+  }, true);
+
+  document.addEventListener('click', event => {
+    const option = event.target.closest('.quiz-option');
+    if (option) selectAnswer(option);
   });
+  quizNext.addEventListener('click', nextQuestion);
+
+  // Estado inicial seguro: resultado persistido nunca é restaurado na abertura da aplicação.
+  clearQuizStorage(); currentQuestionIndex = 0; score = 0; totalScore = 0; isFinished = false; selectedAnswer = null; answered = false;
 })();
