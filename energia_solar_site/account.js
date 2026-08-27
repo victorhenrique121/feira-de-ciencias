@@ -12,10 +12,11 @@
   }
 
   const firstName = String(visitor.nome || 'Visitante').trim().split(/\s+/)[0] || 'Visitante';
+
   const style = document.createElement('style');
   style.textContent = `
     .compact-userbar{position:fixed;top:0;left:0;right:0;z-index:10000;height:54px;background:#0f2f26;color:#fff;border-bottom:1px solid #315347;display:flex;align-items:center;box-sizing:border-box;font:500 14px/1 "DM Sans",sans-serif;box-shadow:0 8px 24px #10201b18}
-    .compact-userbar *{box-sizing:border-box}.compact-userbar-inner{width:min(1180px,calc(100% - 28px));margin:auto;display:flex;align-items:center;gap:22px}.compact-brand{color:#fff;text-decoration:none;font:700 16px/1 "Space Grotesk",sans-serif;white-space:nowrap}.compact-brand b{color:#d8f581}.compact-nav{display:flex;align-items:center;gap:4px}.compact-nav a{color:#c9d8d2;text-decoration:none;padding:9px 11px;border-radius:9px}.compact-nav a:hover,.compact-nav a[aria-current="page"]{color:#fff;background:#ffffff12}.compact-profile{margin-left:auto;color:#d8f581;text-decoration:none;white-space:nowrap;max-width:190px;overflow:hidden;text-overflow:ellipsis}.compact-profile:hover{text-decoration:underline}.compact-spacer{height:54px}.compact-userbar + *{ }
+    .compact-userbar *{box-sizing:border-box}.compact-userbar-inner{width:min(1180px,calc(100% - 28px));margin:auto;display:flex;align-items:center;gap:22px}.compact-brand{color:#fff;text-decoration:none;font:700 16px/1 "Space Grotesk",sans-serif;white-space:nowrap}.compact-brand b{color:#d8f581}.compact-nav{display:flex;align-items:center;gap:4px}.compact-nav a{color:#c9d8d2;text-decoration:none;padding:9px 11px;border-radius:9px}.compact-nav a:hover,.compact-nav a[aria-current="page"]{color:#fff;background:#ffffff12}.compact-profile{margin-left:auto;color:#d8f581;text-decoration:none;white-space:nowrap;max-width:190px;overflow:hidden;text-overflow:ellipsis}.compact-profile:hover{text-decoration:underline}.compact-spacer{height:54px}
     .invest-question{margin-top:24px;padding:22px;border:1px solid #dfe9e3;border-radius:18px;background:#f8fbf8;text-align:left}.invest-question h4{margin:0 0 6px;font:700 18px/1.2 "Space Grotesk",sans-serif;color:#102f26}.invest-question p{margin:0 0 14px;color:#52645c}.invest-options{display:flex;gap:9px;flex-wrap:wrap}.invest-option{border:1px solid #b9cbc1;background:#fff;color:#17352c;border-radius:11px;padding:10px 16px;font:700 14px/1 "DM Sans",sans-serif;cursor:pointer}.invest-option:hover,.invest-option.selected{background:#d8f581;border-color:#b7d45f;color:#10201b}.invest-confirm{margin-top:14px;border:0;border-radius:11px;padding:11px 18px;background:#0f2f26;color:#fff;font:700 14px/1 "DM Sans",sans-serif;cursor:pointer}.invest-confirm:disabled{opacity:.45;cursor:not-allowed}.invest-status{margin-top:10px;font-size:13px;color:#466057}.reward-toast{position:fixed;right:24px;bottom:24px;z-index:10001;width:min(390px,calc(100vw - 32px));display:flex;gap:14px;align-items:flex-start;padding:18px;background:#0f2f26;color:#fff;border:1px solid #34584b;border-radius:18px;box-shadow:0 18px 45px #10201b40;font:14px/1.45 "DM Sans",sans-serif}.reward-toast-icon{width:42px;height:42px;border-radius:13px;background:#d8f581;color:#10201b;display:grid;place-items:center;font-size:20px;flex:none}.reward-toast strong{font-family:"Space Grotesk",sans-serif}.reward-toast p{margin:3px 0 7px;color:#c7d4ce}.reward-toast a{color:#d8f581;font-weight:700;text-decoration:none}.reward-toast button{margin-left:auto;background:none;border:0;color:#b9c9c1;font-size:22px;cursor:pointer}
     @media(max-width:640px){.compact-userbar-inner{gap:7px}.compact-brand{font-size:14px}.compact-nav a{padding:8px 7px;font-size:12px}.compact-profile{max-width:90px;font-size:12px}.compact-userbar-inner{width:calc(100% - 14px)}}
   `;
@@ -31,7 +32,7 @@
         <a class="compact-brand" href="/">Terceirão <b>2026</b></a>
         <nav class="compact-nav" aria-label="Navegação rápida">
           <a href="/" ${path === '/' ? 'aria-current="page"' : ''}>Home</a>
-          <a href="/#quiz" ${path === '/' && location.hash === '#quiz' ? 'aria-current="page"' : ''}>Quiz</a>
+          <a href="/#quiz">Quiz</a>
           <a href="/perfil" ${path === '/perfil' ? 'aria-current="page"' : ''}>Perfil</a>
         </nav>
         <a class="compact-profile" href="/perfil" title="Abrir perfil">Olá, ${firstName}</a>
@@ -47,12 +48,10 @@
   const quizStartedAt = Number(sessionStorage.getItem('quizStartedAt')) || Date.now();
   sessionStorage.setItem('quizStartedAt', String(quizStartedAt));
 
-  let pendingQuiz = null;
-  let pendingOriginalFetch = null;
-
   function createInvestmentQuestion() {
-    if (!document.querySelector('.quiz-result') || document.querySelector('.invest-question')) return;
     const result = document.querySelector('.quiz-result');
+    if (!result || document.querySelector('.invest-question')) return;
+
     const box = document.createElement('section');
     box.className = 'invest-question';
     box.innerHTML = `
@@ -72,29 +71,27 @@
     box.querySelectorAll('.invest-option').forEach((button) => {
       button.addEventListener('click', () => {
         selected = button.dataset.invest;
-        box.querySelectorAll('.invest-option').forEach((b) => b.classList.toggle('selected', b === button));
+        box.querySelectorAll('.invest-option').forEach((item) => item.classList.toggle('selected', item === button));
         box.querySelector('.invest-confirm').disabled = false;
       });
     });
 
     box.querySelector('.invest-confirm').addEventListener('click', async () => {
-      if (!selected || !pendingQuiz) return;
+      if (!selected) return;
       const confirm = box.querySelector('.invest-confirm');
       const status = box.querySelector('.invest-status');
       confirm.disabled = true;
       status.textContent = 'Salvando sua resposta...';
+
       try {
-        pendingQuiz.would_invest = selected;
-        const response = await pendingOriginalFetch(pendingQuiz.url, {
+        const response = await fetch('/api/quiz-attempts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pendingQuiz.body)
+          body: JSON.stringify({ userId: visitor.id, would_invest: selected })
         });
-        if (!response.ok) throw new Error('Falha ao salvar');
-        const data = await response.clone().json();
-        pendingQuiz = null;
-        status.textContent = '✓ Resultado e resposta registrados.';
-        if (data.rewardUnlocked) showRewardNotice(data.reward);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.erro || 'Falha ao salvar');
+        status.textContent = '✓ Resultado e resposta registrados no perfil.';
         confirm.textContent = 'Resposta registrada';
       } catch (error) {
         confirm.disabled = false;
@@ -104,31 +101,41 @@
     });
   }
 
-  const observer = new MutationObserver(() => createInvestmentQuestion());
+  const observer = new MutationObserver(createInvestmentQuestion);
   observer.observe(document.body, { childList: true, subtree: true });
   createInvestmentQuestion();
 
+  // Injeta a identidade do usuário em qualquer salvamento de quiz sem bloquear o fetch original.
   const originalFetch = window.fetch.bind(window);
-  pendingOriginalFetch = originalFetch;
   window.fetch = async (input, init = {}) => {
     const url = typeof input === 'string' ? input : input?.url || '';
+    const isQuizSave = url.includes('/api/quiz-results') || url.includes('/api/quiz-attempts');
 
-    if ((url.includes('/api/quiz-results') || url.includes('/api/quiz-attempts')) && init.body) {
+    if (isQuizSave && init.body) {
       try {
         const body = JSON.parse(init.body);
         body.userId = visitor.id;
         body.nome = visitor.nome;
         body.email = visitor.email || '';
         body.timeSeconds = Math.max(0, Math.floor((Date.now() - Number(sessionStorage.getItem('quizStartedAt') || quizStartedAt)) / 1000));
-        pendingQuiz = { url, body };
-        // A tentativa só é realmente gravada depois que o participante responde à pesquisa.
-        return new Promise((resolve) => {
-          pendingQuiz.resolve = resolve;
-        });
-      } catch {}
+        init = { ...init, body: JSON.stringify(body) };
+      } catch {
+        // Mantém o request original se o body não for JSON.
+      }
     }
 
-    return originalFetch(input, init);
+    const response = await originalFetch(input, init);
+
+    if (isQuizSave && response.ok) {
+      try {
+        const data = await response.clone().json();
+        if (data.rewardUnlocked) showRewardNotice(data.reward);
+      } catch {
+        // Respostas sem JSON não interferem no fluxo.
+      }
+    }
+
+    return response;
   };
 
   function showRewardNotice(reward) {

@@ -3,7 +3,14 @@ const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
 const path = require('node:path');
 
-const { db, findUserById, createOrUpdateUser, saveQuizAttempt, unlockEbook } = require('./server/database');
+const {
+  db,
+  findUserById,
+  createOrUpdateUser,
+  saveQuizAttempt,
+  unlockEbook,
+  updateLatestQuizInvestment
+} = require('./server/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -92,12 +99,16 @@ app.get('/api/users/:id/rewards', (req, res) => {
 
 function saveQuizRequest(req, res) {
   try {
-    let userId = positiveInt(req.body?.userId);
-    const nome = String(req.body?.nome || '').trim();
-    const email = String(req.body?.email || '').trim();
-    if (!userId) {
-      if (nome.length < 2) return res.status(400).json({ erro: 'Usuário não identificado.' });
-      userId = createOrUpdateUser(nome, email).id;
+    const userId = positiveInt(req.body?.userId);
+    if (!userId) return res.status(400).json({ erro: 'Usuário não identificado.' });
+
+    const wouldInvest = String(req.body?.would_invest || '').trim().toLowerCase();
+    const hasScore = req.body?.score !== undefined && req.body?.total !== undefined;
+
+    // A pesquisa de investimento atualiza a tentativa mais recente em vez de criar uma segunda linha.
+    if (!hasScore && wouldInvest) {
+      const updated = updateLatestQuizInvestment(userId, wouldInvest);
+      return res.status(200).json({ ok: true, id: updated.id, userId, would_invest: updated.would_invest });
     }
 
     const result = saveQuizAttempt({
@@ -105,7 +116,7 @@ function saveQuizRequest(req, res) {
       score: Number(req.body?.score),
       total: Number(req.body?.total),
       timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null,
-      wouldInvest: String(req.body?.would_invest || '').trim().toLowerCase()
+      wouldInvest
     });
 
     res.status(201).json({

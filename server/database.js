@@ -66,21 +66,16 @@ db.exec(`
   );
 `);
 
-// Migra bancos criados pela versão anterior, adicionando a coluna sem apagar dados.
 const columns = db.prepare(`PRAGMA table_info(quiz_attempts)`).all();
 if (!columns.some((column) => column.name === 'would_invest')) {
   db.exec(`ALTER TABLE quiz_attempts ADD COLUMN would_invest TEXT CHECK (would_invest IN ('sim', 'nao', 'talvez'))`);
 }
 
-db.prepare(`
-  INSERT OR IGNORE INTO activities (slug, name, type)
-  VALUES (?, ?, ?)
-`).run('quiz-energia-solar', 'Quiz de Energia Solar', 'quiz');
+db.prepare(`INSERT OR IGNORE INTO activities (slug, name, type) VALUES (?, ?, ?)`).run(
+  'quiz-energia-solar', 'Quiz de Energia Solar', 'quiz'
+);
 
-db.prepare(`
-  INSERT OR IGNORE INTO rewards (slug, name, description, type, file_path)
-  VALUES (?, ?, ?, ?, ?)
-`).run(
+db.prepare(`INSERT OR IGNORE INTO rewards (slug, name, description, type, file_path) VALUES (?, ?, ?, ?, ?)`).run(
   'ebook-energia-sustentavel',
   'E-book Energia Sustentável',
   'Guia educativo sobre energia solar, sustentabilidade e consumo consciente.',
@@ -115,13 +110,8 @@ function createOrUpdateUser(name, email) {
 }
 
 function unlockEbook(userId) {
-  const reward = db.prepare(`
-    SELECT id, slug, name, description, type, file_path
-    FROM rewards
-    WHERE slug = 'ebook-energia-sustentavel'
-  `).get();
+  const reward = db.prepare(`SELECT id, slug, name, description, type, file_path FROM rewards WHERE slug = 'ebook-energia-sustentavel'`).get();
   if (!reward) return null;
-
   db.prepare(`INSERT OR IGNORE INTO user_rewards (user_id, reward_id) VALUES (?, ?)`).run(userId, reward.id);
   return reward;
 }
@@ -144,12 +134,9 @@ function saveQuizAttempt({ userId, score, total, timeSeconds, wouldInvest }) {
   const safeTime = Number.isInteger(timeSeconds) && timeSeconds >= 0 ? Math.min(timeSeconds, 86400) : null;
 
   const activity = db.prepare(`SELECT id FROM activities WHERE slug = 'quiz-energia-solar'`).get();
-  const result = db.prepare(`
-    INSERT INTO quiz_attempts (
-      user_id, activity_id, score, total, correct_answers,
-      wrong_answers, percentage, time_seconds, would_invest
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(userId, activity.id, safeScore, safeTotal, correctAnswers, wrongAnswers, percentage, safeTime, safeWouldInvest);
+  const result = db.prepare(`INSERT INTO quiz_attempts (user_id, activity_id, score, total, correct_answers, wrong_answers, percentage, time_seconds, would_invest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    userId, activity.id, safeScore, safeTotal, correctAnswers, wrongAnswers, percentage, safeTime, safeWouldInvest
+  );
 
   const reward = percentage >= 70 ? unlockEbook(userId) : null;
 
@@ -167,4 +154,21 @@ function saveQuizAttempt({ userId, score, total, timeSeconds, wouldInvest }) {
   };
 }
 
-module.exports = { db, findUserById, findUserByEmail, createOrUpdateUser, unlockEbook, saveQuizAttempt };
+function updateLatestQuizInvestment(userId, wouldInvest) {
+  const allowed = new Set(['sim', 'nao', 'talvez']);
+  if (!allowed.has(wouldInvest)) throw new Error('Resposta de investimento inválida.');
+  const latest = db.prepare(`SELECT id FROM quiz_attempts WHERE user_id = ? ORDER BY datetime(created_at) DESC, id DESC LIMIT 1`).get(userId);
+  if (!latest) throw new Error('Nenhum quiz concluído foi encontrado para este usuário.');
+  db.prepare(`UPDATE quiz_attempts SET would_invest = ? WHERE id = ?`).run(wouldInvest, latest.id);
+  return db.prepare(`SELECT id, would_invest FROM quiz_attempts WHERE id = ?`).get(latest.id);
+}
+
+module.exports = {
+  db,
+  findUserById,
+  findUserByEmail,
+  createOrUpdateUser,
+  unlockEbook,
+  saveQuizAttempt,
+  updateLatestQuizInvestment
+};
