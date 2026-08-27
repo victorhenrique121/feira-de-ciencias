@@ -101,3 +101,12 @@ const PERGUNTAS = [
     explicacao: "Renovável significa que a fonte se repõe naturalmente em uma escala compatível com seu uso."
   }
 ];
+
+// Carrega o controlador depois de PERGUNTAS e depois de app.js o suficiente para
+// que o listener em fase de captura possa assumir o fluxo do quiz.
+if (!document.querySelector('script[data-quiz-ui]')) {
+  const script = document.createElement('script');
+  script.src = 'quiz-ui.js';
+  script.dataset.quizUi = 'true';
+  document.head.appendChild(script);
+}
