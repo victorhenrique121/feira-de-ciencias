@@ -15,6 +15,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE,
+    points INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -32,6 +33,7 @@ db.exec(`
     activity_id INTEGER NOT NULL,
     score INTEGER NOT NULL,
     total INTEGER NOT NULL,
+    points INTEGER NOT NULL DEFAULT 0,
     correct_answers INTEGER NOT NULL,
     wrong_answers INTEGER NOT NULL,
     percentage REAL NOT NULL,
@@ -66,9 +68,17 @@ db.exec(`
   );
 `);
 
-const columns = db.prepare(`PRAGMA table_info(quiz_attempts)`).all();
-if (!columns.some((column) => column.name === 'would_invest')) {
+const userColumns = db.prepare(`PRAGMA table_info(users)`).all();
+if (!userColumns.some((column) => column.name === 'points')) {
+  db.exec(`ALTER TABLE users ADD COLUMN points INTEGER NOT NULL DEFAULT 0`);
+}
+
+const attemptColumns = db.prepare(`PRAGMA table_info(quiz_attempts)`).all();
+if (!attemptColumns.some((column) => column.name === 'would_invest')) {
   db.exec(`ALTER TABLE quiz_attempts ADD COLUMN would_invest TEXT CHECK (would_invest IN ('sim', 'nao', 'talvez'))`);
+}
+if (!attemptColumns.some((column) => column.name === 'points')) {
+  db.exec(`ALTER TABLE quiz_attempts ADD COLUMN points INTEGER NOT NULL DEFAULT 0`);
 }
 
 db.prepare(`INSERT OR IGNORE INTO activities (slug, name, type) VALUES (?, ?, ?)`).run(
@@ -84,12 +94,12 @@ db.prepare(`INSERT OR IGNORE INTO rewards (slug, name, description, type, file_p
 );
 
 function findUserById(id) {
-  return db.prepare(`SELECT id, name, email, created_at FROM users WHERE id = ?`).get(id);
+  return db.prepare(`SELECT id, name, email, points, created_at FROM users WHERE id = ?`).get(id);
 }
 
 function findUserByEmail(email) {
   if (!email) return undefined;
-  return db.prepare(`SELECT id, name, email, created_at FROM users WHERE email = ?`).get(email.toLowerCase());
+  return db.prepare(`SELECT id, name, email, points, created_at FROM users WHERE email = ?`).get(email.toLowerCase());
 }
 
 function createOrUpdateUser(name, email) {
@@ -116,13 +126,14 @@ function unlockEbook(userId) {
   return reward;
 }
 
-function saveQuizAttempt({ userId, score, total, timeSeconds, wouldInvest }) {
+function saveQuizAttempt({ userId, score, total, points, timeSeconds, wouldInvest }) {
   const user = findUserById(userId);
   if (!user) throw new Error('Usuário não encontrado.');
 
   const safeTotal = Math.floor(Number(total));
   const safeScore = Math.max(0, Math.min(safeTotal, Math.floor(Number(score))));
-  if (!Number.isInteger(safeTotal) || safeTotal <= 0 || !Number.isInteger(safeScore)) {
+  const safePoints = Math.max(0, Math.floor(Number(points)));
+  if (!Number.isInteger(safeTotal) || safeTotal <= 0 || !Number.isInteger(safeScore) || !Number.isInteger(safePoints)) {
     throw new Error('Pontuação inválida.');
   }
 
@@ -134,16 +145,28 @@ function saveQuizAttempt({ userId, score, total, timeSeconds, wouldInvest }) {
   const safeTime = Number.isInteger(timeSeconds) && timeSeconds >= 0 ? Math.min(timeSeconds, 86400) : null;
 
   const activity = db.prepare(`SELECT id FROM activities WHERE slug = 'quiz-energia-solar'`).get();
-  const result = db.prepare(`INSERT INTO quiz_attempts (user_id, activity_id, score, total, correct_answers, wrong_answers, percentage, time_seconds, would_invest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    userId, activity.id, safeScore, safeTotal, correctAnswers, wrongAnswers, percentage, safeTime, safeWouldInvest
-  );
 
-  const reward = percentage >= 70 ? unlockEbook(userId) : null;
+  const transaction = db.transaction(() => {
+    const result = db.prepare(`INSERT INTO quiz_attempts (user_id, activity_id, score, total, points, correct_answers, wrong_answers, percentage, time_seconds, would_invest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      userId, activity.id, safeScore, safeTotal, safePoints, correctAnswers, wrongAnswers, percentage, safeTime, safeWouldInvest
+    );
+
+    db.prepare(`UPDATE users SET points = points + ? WHERE id = ?`).run(safePoints, userId);
+
+    const reward = percentage >= 70 ? unlockEbook(userId) : null;
+    const updatedUser = findUserById(userId);
+
+    return { result, reward, updatedUser };
+  });
+
+  const { result, reward, updatedUser } = transaction();
 
   return {
     id: result.lastInsertRowid,
     score: safeScore,
     total: safeTotal,
+    points: safePoints,
+    totalPoints: updatedUser.points,
     correctAnswers,
     wrongAnswers,
     percentage,

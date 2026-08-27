@@ -36,7 +36,7 @@ async function migrateOldResults() {
     const activity = db.prepare(`SELECT id FROM activities WHERE slug = 'quiz-energia-solar'`).get();
     const seen = db.prepare(`SELECT 1 FROM legacy_migrations WHERE legacy_id = ?`);
     const mark = db.prepare(`INSERT OR IGNORE INTO legacy_migrations (legacy_id) VALUES (?)`);
-    const insert = db.prepare(`INSERT INTO quiz_attempts (user_id, activity_id, score, total, correct_answers, wrong_answers, percentage, time_seconds, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)`);
+    const insert = db.prepare(`INSERT INTO quiz_attempts (user_id, activity_id, score, total, points, correct_answers, wrong_answers, percentage, time_seconds, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`);
 
     const migrate = db.transaction((items) => {
       for (const item of items) {
@@ -48,7 +48,7 @@ async function migrateOldResults() {
         if (!total) continue;
         const wrong = total - score;
         const percentage = Number(((score / total) * 100).toFixed(2));
-        insert.run(user.id, activity.id, score, total, score, wrong, percentage, item.data || new Date().toISOString());
+        insert.run(user.id, activity.id, score, total, 0, score, wrong, percentage, item.data || new Date().toISOString());
         if (percentage >= 70) unlockEbook(user.id);
         mark.run(legacyId);
       }
@@ -79,14 +79,14 @@ app.get('/api/users/:id', (req, res) => {
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
   const user = findUserById(userId);
   if (!user) return res.status(404).json({ erro: 'Usuário não encontrado.' });
-  const stats = db.prepare(`SELECT COUNT(*) AS quizzes, COALESCE(ROUND(AVG(percentage), 2), 0) AS average, COALESCE(MAX(percentage), 0) AS best_score, COALESCE(SUM(correct_answers), 0) AS correct_answers, COALESCE(SUM(wrong_answers), 0) AS wrong_answers FROM quiz_attempts WHERE user_id = ?`).get(userId);
+  const stats = db.prepare(`SELECT COUNT(*) AS quizzes, COALESCE(ROUND(AVG(percentage), 2), 0) AS average, COALESCE(MAX(percentage), 0) AS best_score, COALESCE(SUM(correct_answers), 0) AS correct_answers, COALESCE(SUM(wrong_answers), 0) AS wrong_answers, COALESCE(SUM(points), 0) AS quiz_points FROM quiz_attempts WHERE user_id = ?`).get(userId);
   res.json({ user, stats });
 });
 
 app.get('/api/users/:id/history', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
-  const history = db.prepare(`SELECT qa.id, a.slug AS activity_slug, a.name AS activity, qa.score, qa.total, qa.correct_answers, qa.wrong_answers, qa.percentage, qa.time_seconds, qa.would_invest, qa.created_at FROM quiz_attempts qa INNER JOIN activities a ON a.id = qa.activity_id WHERE qa.user_id = ? ORDER BY datetime(qa.created_at) DESC, qa.id DESC`).all(userId);
+  const history = db.prepare(`SELECT qa.id, a.slug AS activity_slug, a.name AS activity, qa.score, qa.total, qa.points, qa.correct_answers, qa.wrong_answers, qa.percentage, qa.time_seconds, qa.would_invest, qa.created_at FROM quiz_attempts qa INNER JOIN activities a ON a.id = qa.activity_id WHERE qa.user_id = ? ORDER BY datetime(qa.created_at) DESC, qa.id DESC`).all(userId);
   res.json(history);
 });
 
@@ -105,7 +105,6 @@ function saveQuizRequest(req, res) {
     const wouldInvest = String(req.body?.would_invest || '').trim().toLowerCase();
     const hasScore = req.body?.score !== undefined && req.body?.total !== undefined;
 
-    // A pesquisa de investimento atualiza a tentativa mais recente em vez de criar uma segunda linha.
     if (!hasScore && wouldInvest) {
       const updated = updateLatestQuizInvestment(userId, wouldInvest);
       return res.status(200).json({ ok: true, id: updated.id, userId, would_invest: updated.would_invest });
@@ -115,6 +114,7 @@ function saveQuizRequest(req, res) {
       userId,
       score: Number(req.body?.score),
       total: Number(req.body?.total),
+      points: Number(req.body?.points),
       timeSeconds: Number.isInteger(Number(req.body?.timeSeconds)) ? Number(req.body.timeSeconds) : null,
       wouldInvest
     });
@@ -125,6 +125,8 @@ function saveQuizRequest(req, res) {
       userId,
       score: result.score,
       total: result.total,
+      points: result.points,
+      totalPoints: result.totalPoints,
       percentual: result.percentage,
       acertos: result.correctAnswers,
       erros: result.wrongAnswers,

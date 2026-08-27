@@ -49,9 +49,9 @@
     $('#userName').textContent = user.name;
     $('#userEmail').textContent = user.email || 'Perfil identificado pelo nome';
     $('#avatar').textContent = user.name.charAt(0).toUpperCase();
+    $('#statPoints').textContent = Number(user.points || 0).toLocaleString('pt-BR');
     $('#statQuizzes').textContent = stats.quizzes;
     $('#statAverage').textContent = `${Number(stats.average).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
-    $('#statBest').textContent = `${Number(stats.best_score).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
     $('#statCorrect').textContent = stats.correct_answers;
   }
 
@@ -65,7 +65,7 @@
       <article class="history-row">
         <div class="history-date"><strong>${date(item.created_at)}</strong><span>${item.activity}</span></div>
         <div class="history-score"><strong>${Number(item.percentage).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</strong><span>${item.score}/${item.total}</span></div>
-        <div class="history-meta"><span>${item.correct_answers} acertos</span><span>${moneyTime(item.time_seconds)}</span></div>
+        <div class="history-meta"><span>${item.points || 0} pontos</span><span>${item.correct_answers} acertos</span><span>${moneyTime(item.time_seconds)}</span></div>
       </article>
     `).join('');
   }
@@ -94,7 +94,7 @@
         <text x="${p.l-8}" y="${y(70)+4}" text-anchor="end">70%</text>
         <text x="${p.l-8}" y="${y(0)+4}" text-anchor="end">0%</text>
         <path d="${path}" class="history-line"/>
-        ${points.map((point, i) => `<circle cx="${point[0]}" cy="${point[1]}" r="5" class="history-point"><title>${items[i].percentage}% — ${date(items[i].created_at)}</title></circle>`).join('')}
+        ${points.map((point, i) => `<circle cx="${point[0]}" cy="${point[1]}" r="5" class="history-point"><title>${items[i].percentage}% — ${items[i].points || 0} pontos — ${date(items[i].created_at)}</title></circle>`).join('')}
       </svg>
     `;
 
@@ -134,6 +134,7 @@
   $('#logout')?.addEventListener('click', () => {
     sessionStorage.removeItem('visitante');
     sessionStorage.removeItem('quizStartedAt');
+    sessionStorage.removeItem('quizLastResult');
     location.replace('/login');
   });
 
