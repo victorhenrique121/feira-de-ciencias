@@ -1,3 +1,5 @@
+// Servidor principal da aplicação da Feira de Ciências.
+// Responsável por servir a interface web, expor a API e persistir os dados do quiz.
 const express = require('express');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'energia_solar_site');
 const OLD_DATA_FILE = path.join(__dirname, 'server', 'data', 'quiz-results.json');
 
+// Middleware global para parse de JSON e entrega dos arquivos estáticos da aplicação.
 app.use(express.json({ limit: '50kb' }));
 app.use(express.static(PUBLIC_DIR, { extensions: ['html'], index: false }));
 
@@ -25,6 +28,8 @@ function positiveInt(value) {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
+// Migra os resultados antigos armazenados em JSON para o banco SQLite.
+// Isso mantém compatibilidade com dados históricos já existentes no projeto.
 async function migrateOldResults() {
   if (!fsSync.existsSync(OLD_DATA_FILE)) return;
   try {
@@ -61,19 +66,33 @@ async function migrateOldResults() {
   }
 }
 
+// Cria ou atualiza um usuário com nome e e-mail informados pela interface.
 app.post('/api/users', (req, res) => {
   try {
     const name = String(req.body?.name || '').trim();
-    const email = String(req.body?.email || '').trim();
-    if (name.length < 2) return res.status(400).json({ erro: 'Digite um nome válido.' });
+    const email = String(req.body?.email || '').toLowerCase().trim();
+
+    // Validação robusta do nome (mínimo de 2 caracteres e sem caracteres estrambóticos excessivos se desejar)
+    if (name.length < 2) {
+      return res.status(400).json({ ok: false, erro: 'Digite um nome válido (mínimo de 2 caracteres).' });
+    }
+
+    // Validação básica de formato de e-mail usando expressão regular (Regex)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({ ok: false, erro: 'Digite um e-mail válido.' });
+    }
+
     const user = createOrUpdateUser(name, email);
-    res.status(201).json({ ok: true, user });
+    
+    return res.status(201).json({ ok: true, user });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ erro: 'Não foi possível criar o perfil.' });
+    console.error('Erro ao criar/atualizar usuário:', error);
+    return res.status(500).json({ ok: false, erro: 'Não foi possível salvar o perfil. Tente novamente mais tarde.' });
   }
 });
 
+// Retorna os dados principais do usuário e algumas estatísticas gerais do quiz.
 app.get('/api/users/:id', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
@@ -83,6 +102,7 @@ app.get('/api/users/:id', (req, res) => {
   res.json({ user, stats });
 });
 
+// Lista o histórico completo de tentativas do usuário, incluindo pontuação e tempo.
 app.get('/api/users/:id/history', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
@@ -90,6 +110,7 @@ app.get('/api/users/:id/history', (req, res) => {
   res.json(history);
 });
 
+// Retorna os prêmios desbloqueados por um usuário específico.
 app.get('/api/users/:id/rewards', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
@@ -97,6 +118,8 @@ app.get('/api/users/:id/rewards', (req, res) => {
   res.json(rewards);
 });
 
+// Salva o resultado de uma tentativa do quiz.
+// Se apenas a resposta de "would_invest" vier no payload, atualiza o último registro.
 function saveQuizRequest(req, res) {
   try {
     const userId = positiveInt(req.body?.userId);
@@ -144,14 +167,17 @@ function saveQuizRequest(req, res) {
 app.post('/api/quiz-results', saveQuizRequest);
 app.post('/api/quiz-attempts', saveQuizRequest);
 
+// Lista as atividades disponíveis para o quiz e para o sistema de recompensas.
 app.get('/api/activities', (_req, res) => {
   res.json(db.prepare(`SELECT id, slug, name, type, created_at FROM activities ORDER BY id`).all());
 });
 
+// Rotas de páginas e arquivos públicos do front-end.
 app.get('/login', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'login.html')));
 app.get('/perfil', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'perfil.html')));
 app.get('/ebook', (_req, res) => res.redirect('/ebook/energia-sustentavel.html'));
 
+// Página inicial: injeta os scripts necessários para o funcionamento da aplicação.
 app.get('/', async (_req, res) => {
   try {
     let html = await fs.readFile(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
@@ -163,8 +189,10 @@ app.get('/', async (_req, res) => {
   }
 });
 
+// Fallback para rotas não mapeadas: serve a SPA principal.
 app.get(/.*/, (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
+// Inicializa a migração e inicia o servidor.
 migrateOldResults().finally(() => {
   app.listen(PORT, () => console.log(`Servidor em http://localhost:${PORT}`));
 });
