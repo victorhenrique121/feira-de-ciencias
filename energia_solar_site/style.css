@@ -128,7 +128,7 @@ summary:focus-visible {
   font-weight: 700;
 }
 .factoid-ticker {
-  background: var(--accent);
+  background: #505050;
   color: #fff;
   min-height: 42px;
   display: flex;
