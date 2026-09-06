@@ -135,7 +135,7 @@ summary:focus-visible {
   align-items: center;
 }
 .factoid-ticker [data-theme="dark"]  {
-  background: var(--accent);
+  background: #505050;
   color: #000;
   min-height: 42px;
   display: flex;
