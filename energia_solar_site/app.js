@@ -36,7 +36,7 @@
     });
   });
 
-  /* PAYBACK */
+  /* PAYBACK (Tópico Geral) */
   function calculate() {
     const inv = Number($("#investimento")?.value || 0);
     const monthly = Number($("#economia")?.value || 0);
@@ -69,7 +69,7 @@
     $("#table").innerHTML = `<table><thead><tr><th>Tempo</th><th>Economia</th><th>Saldo</th></tr></thead><tbody>${points.map((year) => { const economy = annual * year; return `<tr><td>${year} ano${year > 1 ? "s" : ""}</td><td>${money(economy)}</td><td>${money(economy - inv)}</td></tr>`; }).join("")}</tbody></table>`;
 
     drawChart(inv, monthly, years);
-    updateImpact(inv, monthly, years);
+    updateImpactGeneral(years);
   }
 
   /* GRÁFICO SVG */
@@ -161,7 +161,7 @@
   chartMonth?.addEventListener("input",()=>renderInteractiveChart(chartMonth.value));
   chartModal?.addEventListener("click",e=>{if(e.target===chartModal)closeChartModal()});
 
-  /* SIMULADOR DA CASA */
+  /* SIMULADOR DA CASA (Tópico Isolado) */
   function calculateHouse() {
     const kwh = Number($("#houseKwh")?.value || 0);
     const bill = Number($("#houseBill")?.value || 0);
@@ -177,21 +177,27 @@
     $("#houseAnnualSave").textContent = money(annualSave);
     $("#housePayback").textContent = `${payback.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} meses`;
     $("#houseText").textContent = `neste cenário, o investimento seria recuperado em cerca de ${(payback / 12).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} anos.`;
-    $("#investimento").value = investment.toFixed(2);
-    $("#economia").value = monthlySave.toFixed(2);
-    calculate();
-    updateImpact(investment, monthlySave, 10, kwh);
+    
+    updateImpactHouse(kwh);
   }
 
   ["houseKwh", "houseBill", "houseInvestment", "houseSaving"].forEach((id) => $(`#${id}`)?.addEventListener("input", calculateHouse));
 
-  /* IMPACTO AMBIENTAL — estimativa didática */
-  function updateImpact(inv, monthlySave, years, kwh = Number($("#houseKwh")?.value || 400)) {
+  /* IMPACTO AMBIENTAL — Isolados por seção */
+  function updateImpactGeneral(years) {
+    // Impacto baseado em estimativa padrão genérica
+    const annualEnergy = Math.max(0, 400 * 12);
+    const co2Factor = 0.24;
+    const co2 = annualEnergy * co2Factor;
+    if ($("#co2Impact")) $("#co2Impact").textContent = `${Math.round(co2).toLocaleString("pt-BR")} kg`;
+    if ($("#energyImpact")) $("#energyImpact").textContent = `${Math.round(annualEnergy).toLocaleString("pt-BR")} kWh`;
+  }
+
+  function updateImpactHouse(kwh) {
     const annualEnergy = Math.max(0, kwh * 12);
     const co2Factor = 0.24;
     const co2 = annualEnergy * co2Factor;
-    $("#co2Impact").textContent = `${Math.round(co2).toLocaleString("pt-BR")} kg`;
-    $("#energyImpact").textContent = `${Math.round(annualEnergy).toLocaleString("pt-BR")} kWh`;
+    // Se houver elementos específicos para o impacto da casa, atualize aqui separadamente
   }
 
   $("#calcBtn")?.addEventListener("click", calculate);

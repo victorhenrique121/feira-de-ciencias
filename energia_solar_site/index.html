@@ -28,9 +28,17 @@
       <a href="#financeira">Finanças</a>
       <a href="#experimento">Experimento</a>
       <a href="#decisao">Decisão</a>
+      <a href="#faq">FAQ</a>
     </nav>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar modo escuro" title="Alternar modo claro e escuro">
+      <span aria-hidden="true">☾</span><span class="theme-toggle-label">Modo escuro</span>
+    </button>
   </div>
 </header>
+
+<div class="factoid-ticker" role="status" aria-live="polite">
+  <div class="container factoid-inner"><span class="factoid-label">VOCÊ SABIA?</span><span id="factoidText">A energia solar não emite poluentes durante a geração.</span></div>
+</div>
 
 <main id="main">
 
@@ -115,29 +123,29 @@
         <p>Altere os dados para visualizar o cenário.</p>
         <div class="fields">
           <label>Consumo mensal (kWh)
-            <input id="houseKwh" type="number" min="1" step="1" value="400">
+            <input id="houseKwh" type="number" min="1" step="1" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </label>
           <label>Valor atual da conta (R$)
-            <input id="houseBill" type="number" min="1" step=".01" value="400">
+            <input id="houseBill" type="number" min="1" step=".01" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </label>
           <label>Investimento no sistema (R$)
-            <input id="houseInvestment" type="number" min="1" step=".01" value="8000">
+            <input id="houseInvestment" type="number" min="1" step=".01" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </label>
           <label>Percentual de economia (%)
-            <input id="houseSaving" type="number" min="1" max="100" step="1" value="80">
+            <input id="houseSaving" type="number" min="1" max="100" step="1" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </label>
         </div>
       </div>
 
       <div class="results house-results" aria-live="polite">
         <div class="result-label">Estimativa da residência</div>
-        <div class="house-main"><strong id="houseNewBill">R$ 80,00</strong><span>conta estimada após a economia</span></div>
+        <div class="house-main"><strong id="houseNewBill">R$ 0,00</strong><span>conta estimada após a economia</span></div>
         <div class="metrics">
-          <div class="metric"><small>Economia mensal</small><strong id="houseMonthlySave">R$ 320,00</strong></div>
-          <div class="metric"><small>Economia anual</small><strong id="houseAnnualSave">R$ 3.840,00</strong></div>
-          <div class="metric"><small>Payback</small><strong id="housePayback">25,0 meses</strong></div>
+          <div class="metric"><small>Economia mensal</small><strong id="houseMonthlySave">R$ 0,00</strong></div>
+          <div class="metric"><small>Economia anual</small><strong id="houseAnnualSave">R$ 0,00</strong></div>
+          <div class="metric"><small>Payback</small><strong id="housePayback">0,0 meses</strong></div>
         </div>
-        <div class="mini-callout"><strong>Leitura rápida:</strong> <span id="houseText">neste cenário, o investimento seria recuperado em cerca de 2,1 anos.</span></div>
+        <div class="mini-callout"><strong>Leitura rápida:</strong> <span id="houseText">neste cenário, o investimento seria recuperado em cerca de 0,0 anos.</span></div>
       </div>
     </div>
   </div>
@@ -155,22 +163,22 @@
         <h3>Simulador de payback</h3>
         <p>Troque os valores e acompanhe o resultado instantaneamente.</p>
         <div class="fields">
-          <label>Investimento inicial (R$)<input id="investimento" type="number" min="0" step=".01" value="8000"></label>
-          <label>Economia mensal (R$)<input id="economia" type="number" min="0" step=".01" value="250"></label>
-          <label>Período da simulação (anos)<input id="anos" type="number" min="1" step="1" value="10"></label>
+          <label>Investimento inicial (R$)<input id="investimento" type="number" min="0" step=".01" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></label>
+          <label>Economia mensal (R$)<input id="economia" type="number" min="0" step=".01" value="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></label>
+          <label>Período da simulação (anos)<input id="anos" type="number" min="1" step="1" value="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></label>
           <button class="btn" id="calcBtn">Atualizar cálculo</button>
         </div>
       </div>
 
       <div class="results" aria-live="polite">
         <div class="result-label">Tempo de retorno</div>
-        <div class="result-number" id="payback">32,0 meses</div>
-        <p id="paybackYears">≈ 2,7 anos para recuperar o investimento.</p>
+        <div class="result-number" id="payback">0,0 meses</div>
+        <p id="paybackYears">≈ 0,0 anos para recuperar o investimento.</p>
 
         <div class="metrics">
-          <div class="metric"><small>Investimento</small><strong id="investLabel">R$ 8.000,00</strong></div>
-          <div class="metric"><small>Economia mensal</small><strong id="monthLabel">R$ 250,00</strong></div>
-          <div class="metric"><small>Economia anual</small><strong id="annual">R$ 3.000,00</strong></div>
+          <div class="metric"><small>Investimento</small><strong id="investLabel">R$ 0,00</strong></div>
+          <div class="metric"><small>Economia mensal</small><strong id="monthLabel">R$ 0,00</strong></div>
+          <div class="metric"><small>Economia anual</small><strong id="annual">R$ 0,00</strong></div>
         </div>
 
         <div class="progress-wrap">
@@ -179,7 +187,7 @@
         </div>
 
         <div class="chart-card">
-          <div class="chart-head"><strong>Investimento × economia acumulada</strong><span id="chartPayback">Payback: 32 meses</span></div>
+          <div class="chart-head"><strong>Investimento × economia acumulada</strong><span id="chartPayback">Payback: 0,0 meses</span></div>
           <div class="chart" id="financeChart" aria-label="Gráfico de investimento e economia acumulada"></div>
           <button class="chart-open-btn" id="openChart" type="button">🔎 Explorar gráfico</button>
         </div>
@@ -292,6 +300,18 @@
   </div>
 </section>
 
+<section class="section reveal" id="faq">
+  <div class="container">
+    <div class="section-head"><div><div class="kicker">11 / Dúvidas</div><h2>Perguntas frequentes</h2></div><p class="section-intro">Respostas rápidas para continuar investigando energia solar com segurança.</p></div>
+    <div class="faq-list">
+      <details><summary>O que é payback?</summary><p>É o tempo estimado para que a economia acumulada alcance o valor investido no sistema.</p></details>
+      <details><summary>Um simulador substitui um orçamento?</summary><p>Não. Ele é uma ferramenta educativa. Um projeto real depende de consumo, tarifa, local, equipamentos e instalação.</p></details>
+      <details><summary>A energia solar funciona em dias nublados?</summary><p>Sim, porque os painéis aproveitam a luz difusa, embora a geração normalmente seja menor do que em um dia ensolarado.</p></details>
+      <details><summary>Como posso melhorar o resultado do sistema?</summary><p>Compare consumo e geração, reduza desperdícios e peça uma avaliação técnica antes de tomar decisões financeiras.</p></details>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer class="footer">
@@ -334,5 +354,6 @@
 
 <script src="perguntas.js"></script>
 <script src="app.js"></script>
+<script src="ui-enhancements.js"></script>
 </body>
 </html>

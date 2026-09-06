@@ -53,6 +53,7 @@ db.exec(`
     name TEXT NOT NULL,
     description TEXT,
     type TEXT NOT NULL,
+    points_cost INTEGER NOT NULL DEFAULT 0,
     file_path TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -81,17 +82,31 @@ if (!attemptColumns.some((column) => column.name === 'points')) {
   db.exec(`ALTER TABLE quiz_attempts ADD COLUMN points INTEGER NOT NULL DEFAULT 0`);
 }
 
+const rewardColumns = db.prepare(`PRAGMA table_info(rewards)`).all();
+if (!rewardColumns.some((column) => column.name === 'points_cost')) {
+  db.exec(`ALTER TABLE rewards ADD COLUMN points_cost INTEGER NOT NULL DEFAULT 0`);
+}
+
 db.prepare(`INSERT OR IGNORE INTO activities (slug, name, type) VALUES (?, ?, ?)`).run(
   'quiz-energia-solar', 'Quiz de Energia Solar', 'quiz'
 );
 
-db.prepare(`INSERT OR IGNORE INTO rewards (slug, name, description, type, file_path) VALUES (?, ?, ?, ?, ?)`).run(
-  'ebook-energia-sustentavel',
-  'E-book Energia Sustentável',
-  'Guia educativo sobre energia solar, sustentabilidade e consumo consciente.',
-  'ebook',
-  '/ebook/energia-sustentavel.html'
-);
+const rewards = [
+  ['ebook-energia-sustentavel', 'E-book: Energia Sustentável', 'Guia educativo sobre energia solar, sustentabilidade e consumo consciente.', 'ebook', 300, '/ebook/energia-sustentavel.html'],
+  ['planilha-payback-avancada', 'Planilha Avançada de Payback', 'Planilha para simular investimento, economia e retorno de sistemas solares.', 'planilha', 500, null],
+  ['guia-paineis-solares', 'Guia de Painéis Solares', 'Material de apoio para comparar tecnologias e escolher painéis solares.', 'guia', 700, null],
+  ['infografico-alta-resolucao', 'Infográfico em Alta Resolução', 'Infográfico visual com os principais conceitos de energia sustentável.', 'infografico', 900, null],
+  ['ebook-carros-eletricos', 'E-book: Carros Elétricos', 'Conteúdo sobre mobilidade elétrica, eficiência e impacto ambiental.', 'ebook', 1200, null],
+  ['certificado-especialista-digital', 'Certificado de Especialista Digital', 'Certificado digital pela conclusão da trilha de aprendizagem.', 'certificado', 1500, null],
+  ['conteudo-secreto-projeto', 'Acesso Antecipado / Conteúdo Secreto do Projeto', 'Acesso antecipado a materiais exclusivos do Terceirão 2026.', 'acesso', 2000, null]
+];
+
+const saveReward = db.prepare(`INSERT OR IGNORE INTO rewards (slug, name, description, type, points_cost, file_path) VALUES (?, ?, ?, ?, ?, ?)`);
+const updateReward = db.prepare(`UPDATE rewards SET name = ?, description = ?, type = ?, points_cost = ?, file_path = ? WHERE slug = ?`);
+for (const [slug, name, description, type, pointsCost, filePath] of rewards) {
+  saveReward.run(slug, name, description, type, pointsCost, filePath);
+  updateReward.run(name, description, type, pointsCost, filePath, slug);
+}
 
 function findUserById(id) {
   return db.prepare(`SELECT id, name, email, points, created_at FROM users WHERE id = ?`).get(id);
@@ -120,10 +135,44 @@ function createOrUpdateUser(name, email) {
 }
 
 function unlockEbook(userId) {
-  const reward = db.prepare(`SELECT id, slug, name, description, type, file_path FROM rewards WHERE slug = 'ebook-energia-sustentavel'`).get();
+  const reward = db.prepare(`SELECT id, slug, name, description, type, points_cost, file_path FROM rewards WHERE slug = 'ebook-energia-sustentavel'`).get();
   if (!reward) return null;
   db.prepare(`INSERT OR IGNORE INTO user_rewards (user_id, reward_id) VALUES (?, ?)`).run(userId, reward.id);
   return reward;
+}
+
+function listRewardsForUser(userId) {
+  const user = findUserById(userId);
+  return db.prepare(`
+    SELECT r.id, r.slug, r.name, r.description, r.type, r.points_cost, r.file_path,
+      CASE WHEN ur.id IS NULL THEN 0 ELSE 1 END AS redeemed,
+      ur.unlocked_at AS redeemed_at
+    FROM rewards r
+    LEFT JOIN user_rewards ur ON ur.reward_id = r.id AND ur.user_id = ?
+    ORDER BY r.points_cost ASC, r.id ASC
+  `).all(userId).map((reward) => ({
+    ...reward,
+    redeemed: Boolean(reward.redeemed),
+    canRedeem: !reward.redeemed && user.points >= reward.points_cost
+  }));
+}
+
+function redeemReward(userId, rewardId) {
+  const transaction = db.transaction(() => {
+    const user = findUserById(userId);
+    if (!user) throw new Error('Usuário não encontrado.');
+    const reward = db.prepare(`SELECT id, slug, name, description, type, points_cost, file_path FROM rewards WHERE id = ?`).get(rewardId);
+    if (!reward) throw new Error('Recompensa não encontrada.');
+    if (db.prepare(`SELECT id FROM user_rewards WHERE user_id = ? AND reward_id = ?`).get(userId, reward.id)) {
+      throw new Error('Esta recompensa já foi resgatada.');
+    }
+    if (user.points < reward.points_cost) throw new Error('Pontos insuficientes para resgatar esta recompensa.');
+
+    db.prepare(`UPDATE users SET points = points - ? WHERE id = ? AND points >= ?`).run(reward.points_cost, userId, reward.points_cost);
+    const redemption = db.prepare(`INSERT INTO user_rewards (user_id, reward_id) VALUES (?, ?)`).run(userId, reward.id);
+    return { reward, redemptionId: redemption.lastInsertRowid, user: findUserById(userId) };
+  });
+  return transaction();
 }
 
 function saveQuizAttempt({ userId, score, total, points, timeSeconds, wouldInvest }) {
@@ -153,10 +202,9 @@ function saveQuizAttempt({ userId, score, total, points, timeSeconds, wouldInves
 
     db.prepare(`UPDATE users SET points = points + ? WHERE id = ?`).run(safePoints, userId);
 
-    const reward = percentage >= 70 ? unlockEbook(userId) : null;
     const updatedUser = findUserById(userId);
 
-    return { result, reward, updatedUser };
+    return { result, reward: null, updatedUser };
   });
 
   const { result, reward, updatedUser } = transaction();
@@ -192,6 +240,8 @@ module.exports = {
   findUserByEmail,
   createOrUpdateUser,
   unlockEbook,
+  listRewardsForUser,
+  redeemReward,
   saveQuizAttempt,
   updateLatestQuizInvestment
 };

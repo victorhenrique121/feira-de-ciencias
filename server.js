@@ -11,7 +11,9 @@ const {
   createOrUpdateUser,
   saveQuizAttempt,
   unlockEbook,
-  updateLatestQuizInvestment
+  updateLatestQuizInvestment,
+  listRewardsForUser,
+  redeemReward
 } = require('./server/database');
 
 const app = express();
@@ -114,8 +116,35 @@ app.get('/api/users/:id/history', (req, res) => {
 app.get('/api/users/:id/rewards', (req, res) => {
   const userId = positiveInt(req.params.id);
   if (!userId) return res.status(400).json({ erro: 'Usuário inválido.' });
-  const rewards = db.prepare(`SELECT r.id, r.slug, r.name, r.description, r.type, r.file_path, ur.unlocked_at FROM user_rewards ur INNER JOIN rewards r ON r.id = ur.reward_id WHERE ur.user_id = ? ORDER BY datetime(ur.unlocked_at) DESC`).all(userId);
-  res.json(rewards);
+  if (!findUserById(userId)) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+  res.json(listRewardsForUser(userId));
+});
+
+// Resgata uma recompensa em uma transação atômica, validando saldo e duplicidade no servidor.
+app.post('/api/users/:id/rewards/:rewardId/redeem', (req, res) => {
+  const userId = positiveInt(req.params.id);
+  const rewardId = positiveInt(req.params.rewardId);
+  if (!userId || !rewardId) return res.status(400).json({ erro: 'Usuário ou recompensa inválidos.' });
+
+  try {
+    const result = redeemReward(userId, rewardId);
+    res.status(201).json({ ok: true, reward: result.reward, redemptionId: result.redemptionId, user: result.user });
+  } catch (error) {
+    const status = /não encontrado|insuficientes|já foi/i.test(error.message) ? 409 : 400;
+    res.status(status).json({ erro: error.message });
+  }
+});
+
+// Libera o arquivo somente para o usuário que já possui o resgate registrado.
+app.get('/api/users/:id/rewards/:rewardId/download', (req, res) => {
+  const userId = positiveInt(req.params.id);
+  const rewardId = positiveInt(req.params.rewardId);
+  if (!userId || !rewardId) return res.status(400).json({ erro: 'Usuário ou recompensa inválidos.' });
+
+  const reward = db.prepare(`SELECT r.file_path FROM user_rewards ur INNER JOIN rewards r ON r.id = ur.reward_id WHERE ur.user_id = ? AND ur.reward_id = ?`).get(userId, rewardId);
+  if (!reward) return res.status(403).json({ erro: 'Recompensa ainda não resgatada.' });
+  if (!reward.file_path) return res.status(404).json({ erro: 'Arquivo da recompensa ainda não publicado.' });
+  res.redirect(reward.file_path);
 });
 
 // Salva o resultado de uma tentativa do quiz.

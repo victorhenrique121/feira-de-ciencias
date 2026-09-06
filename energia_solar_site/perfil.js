@@ -10,6 +10,7 @@
   }
 
   const $ = (selector) => document.querySelector(selector);
+  let currentPoints = 0;
   const moneyTime = (seconds) => {
     if (!Number.isInteger(seconds)) return '—';
     const min = Math.floor(seconds / 60);
@@ -20,6 +21,8 @@
   const date = (value) => new Date(value).toLocaleDateString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
+
+  const formatPoints = (value) => Number(value).toLocaleString('pt-BR');
 
   async function load() {
     try {
@@ -45,11 +48,28 @@
     }
   }
 
+  async function redeemReward(rewardId) {
+    const button = document.querySelector(`[data-redeem-id="${rewardId}"]`);
+    if (button) button.disabled = true;
+
+    try {
+      const response = await fetch(`/api/users/${visitor.id}/rewards/${rewardId}/redeem`, { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.erro || 'Não foi possível resgatar a recompensa.');
+      sessionStorage.setItem('visitante', JSON.stringify(result.user));
+      await load();
+    } catch (error) {
+      if (button) button.disabled = false;
+      window.alert(error.message);
+    }
+  }
+
   function renderProfile(user, stats) {
+    currentPoints = Number(user.points || 0);
     $('#userName').textContent = user.name;
     $('#userEmail').textContent = user.email || 'Perfil identificado pelo nome';
     $('#avatar').textContent = user.name.charAt(0).toUpperCase();
-    $('#statPoints').textContent = Number(user.points || 0).toLocaleString('pt-BR');
+    $('#statPoints').textContent = formatPoints(currentPoints);
     $('#statQuizzes').textContent = stats.quizzes;
     $('#statAverage').textContent = `${Number(stats.average).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
     $('#statCorrect').textContent = stats.correct_answers;
@@ -107,28 +127,23 @@
   }
 
   function renderRewards(rewards) {
-    if (!rewards.length) {
-      $('#rewards').innerHTML = `
-        <div class="reward-locked">
-          <div class="reward-icon">🎁</div>
-          <strong>Seu e-book ainda está bloqueado</strong>
-          <p>Conclua o quiz com pelo menos <b>70%</b> para desbloquear a recompensa.</p>
-          <a href="/#quiz">Fazer o quiz →</a>
-        </div>`;
-      return;
-    }
-
     $('#rewards').innerHTML = rewards.map(reward => `
-      <article class="reward-card">
-        <div class="reward-icon">📘</div>
+      <article class="reward-card ${reward.redeemed ? 'is-redeemed' : ''}">
+        <div class="reward-icon">${reward.redeemed ? '✓' : '🎁'}</div>
         <div>
           <strong>${reward.name}</strong>
+          <span class="reward-cost">${formatPoints(reward.points_cost)} pontos</span>
           <p>${reward.description || ''}</p>
-          <small>Desbloqueado em ${date(reward.unlocked_at)}</small>
-          <a class="reward-link" href="${reward.file_path}" target="_blank" rel="noopener">Abrir e-book →</a>
+          ${reward.redeemed
+            ? `<small>Resgatado em ${date(reward.redeemed_at)}</small>${reward.file_path ? `<a class="reward-link" href="/api/users/${visitor.id}/rewards/${reward.id}/download" target="_blank" rel="noopener noreferrer">Abrir recompensa →</a>` : '<small>Arquivo em preparação</small>'}`
+            : `<button class="reward-button" data-redeem-id="${reward.id}" ${reward.canRedeem ? '' : 'disabled'}>${reward.canRedeem ? 'Resgatar recompensa' : `Faltam ${formatPoints(reward.points_cost - currentPoints)} pontos`}</button>`}
         </div>
       </article>
     `).join('');
+
+    document.querySelectorAll('[data-redeem-id]').forEach((button) => {
+      button.addEventListener('click', () => redeemReward(button.dataset.redeemId));
+    });
   }
 
   $('#logout')?.addEventListener('click', () => {
